@@ -1,0 +1,2040 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<meta name="color-scheme" content="dark">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#000000">
+<title>思维系统</title>
+<link rel="icon" href="data:,">
+<style>
+/* ==========================================================================
+   设计令牌 —— 全站唯一的数值出处
+   改大小、改灰阶只改这里；别在其它文件里出现字面色值。
+   ========================================================================== */
+
+:root {
+  /* 灰阶：只有四档，不新增第五档 */
+  --bg: #000000;
+  --ink: #ffffff;
+  --ink-dim: #7a7a7a;
+  --ink-line: #313131;
+  --ink-bar: #101010;
+
+  /* 两套字体，对应两种说话的人 */
+  --font-sys: SimSun, "Songti SC", "Noto Serif SC", "Source Han Serif SC", STSong, serif;
+  --font-file: "Times New Roman", KaiTi, "Kaiti SC", STKaiti, "Kaiti TC", SimSun, serif;
+
+  /* 排版 */
+  --fs: 18px;
+  --lh: 2;
+  --fs-label: 15px;
+
+  /* 面板几何：视口的 86%，超宽屏封顶。想更大更小只改 --panel-fill */
+  --panel-fill: 86;
+  --panel-w: 1800px;
+  --panel-h: 1100px;
+  --head-h: 34px;
+  --bar-h: 48px;
+  --pad-x: 16px;
+  --pad-y: 14px;
+
+  /* 段落间距：一个空行 */
+  --blk-gap: 1em;
+}
+
+</style>
+<style>
+/* ==========================================================================
+   文字形态 —— 屏幕上只有五类行
+     echo 回显 / sys 系统 / file.doc 档案 / file.mem 记忆 / prose（暂并入 file.mem）
+   区分手段只有三个：灰度、缩进、宋楷之别。
+   ========================================================================== */
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sys);
+  font-size: var(--fs);
+  line-height: var(--lh);
+  font-weight: 400;
+  color: var(--ink);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+b, strong { font-weight: 700; }
+
+p, h3, dl, dt, dd, hr { margin: 0; }
+
+::selection { background: #ffffff; color: #000000; }
+
+/* ---------- 行 ---------- */
+
+.ln {
+  overflow-wrap: anywhere;
+}
+
+.ln--sys { color: var(--ink-dim); }
+.ln--boot-ink { color: var(--ink); }
+.ln--boot-dim { color: var(--ink-dim); }
+
+.ln--cap {
+  color: var(--ink-dim);
+  margin-top: 1em;
+}
+
+.ln--cap:first-child { margin-top: 0; }
+
+.ln--row { padding-left: 0; }
+
+/* ---------- 回显 ---------- */
+
+.echo {
+  display: flex;
+  gap: 8px;
+  background: var(--ink-bar);
+  color: var(--ink);
+  margin: 6px calc(-1 * var(--pad-x));
+  padding: 2px var(--pad-x) 3px;
+}
+
+.echo__mark { color: var(--ink-dim); }
+
+.echo__text {
+  min-width: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* ---------- 正文 ---------- */
+
+.file { color: var(--ink); }
+
+.file--mem {
+  font-family: var(--font-file);
+  padding-left: 2em;
+}
+
+.file--doc {
+  font-family: var(--font-sys);
+}
+
+.mark {
+  font-family: var(--font-sys);
+  color: var(--ink-dim);
+}
+
+.mark--mem { padding-left: 2em; }
+
+.blk {
+  margin-bottom: var(--blk-gap);
+  overflow-wrap: anywhere;
+}
+
+.blk:last-child { margin-bottom: 0; }
+
+.blk--h { font-weight: 700; }
+
+.blk--note {
+  color: var(--ink-dim);
+  font-size: 0.92em;
+}
+
+.rule {
+  border: 0;
+  border-top: 1px solid var(--ink-line);
+  margin: 1em 0;
+}
+
+/* 竖向字段卡：表头变标签，每个「标签：值」占一行 */
+.kv {
+  margin: 0 0 var(--blk-gap);
+  padding-left: 1em;
+  border-left: 1px solid var(--ink-line);
+}
+
+.kv__pair {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  column-gap: 0.5em;
+  align-items: baseline;
+  overflow-wrap: anywhere;
+}
+
+.kv__pair + .kv__pair { margin-top: 0.15em; }
+
+.kv dt {
+  color: var(--ink-dim);
+  white-space: nowrap;       /* 「住址」「姓名」这些标签整体不拆 */
+}
+
+.kv dt::after { content: '：'; }
+
+.kv dd {
+  margin: 0;
+  min-width: 0;
+}
+
+/* note 回执：系统在说话，所以灰一档；但允许正文的块语法（含 **加粗**） */
+.reply {
+  color: var(--ink-dim);
+  margin-bottom: var(--blk-gap);
+}
+
+.reply .blk { margin-bottom: 0; }
+
+</style>
+<style>
+/* ==========================================================================
+   版式 —— 一块两栏的屏幕
+   --------------------------------------------------------------------------
+   桌面：左栏（记忆 + 底部长在左栏下的命令行）｜ 右栏（档案，通高）
+   窄屏：记忆在上、档案在中、命令行在最下
+   ========================================================================== */
+
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html, body { height: 100%; }
+
+body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.screen {
+  width: min(var(--panel-w), calc(var(--panel-fill) * 1vw));
+  height: min(var(--panel-h), calc(var(--panel-fill) * 1vh));
+  height: min(var(--panel-h), calc(var(--panel-fill) * 1dvh));
+  border: 1px solid var(--ink-line);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "mem doc"
+    "bar doc";
+  overflow: hidden;
+}
+
+/* ---------- 栏 ---------- */
+
+.col {
+  display: grid;
+  grid-template-rows: var(--head-h) minmax(0, 1fr);
+  min-height: 0;
+  min-width: 0;
+}
+
+.col--mem { grid-area: mem; }
+
+.col--doc {
+  grid-area: doc;
+  border-left: 1px solid var(--ink-line);
+}
+
+.col__head {
+  height: var(--head-h);
+  line-height: var(--head-h);
+  padding: 0 var(--pad-x);
+  color: var(--ink-dim);
+  border-bottom: 1px solid var(--ink-line);
+  font-size: var(--fs-label);
+}
+
+.col--doc.is-live .col__head { color: var(--ink); }
+
+.stream {
+  position: relative;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: var(--pad-y) var(--pad-x) 10px;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #2a2a2a transparent;
+}
+
+.stream::-webkit-scrollbar { width: 6px; }
+.stream::-webkit-scrollbar-track { background: transparent; }
+.stream::-webkit-scrollbar-thumb { background: #2a2a2a; }
+
+/* ---------- 折叠 ---------- */
+
+.round { display: block; }
+.round.is-folded { display: none; }
+
+/* ---------- 命令行 ---------- */
+
+.bar {
+  grid-area: bar;
+  height: var(--bar-h);
+  padding: 0 var(--pad-x);
+  border-top: 1px solid var(--ink-line);
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+}
+
+.field {
+  position: relative;
+  flex: 1;
+  height: 100%;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  overflow: hidden;
+  cursor: text;
+}
+
+.field::before {
+  content: '>';
+  color: var(--ink-dim);
+  flex: none;
+}
+
+/* 输入行可视区：真 input 盖在上面（透明），这一层只负责画 */
+.viewport {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+}
+
+.line {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  white-space: pre;
+  will-change: transform;
+}
+
+.mirror { color: var(--ink); white-space: pre; }
+
+/* 零宽块状光标：不占位，盖在下一个字上 */
+.caret {
+  position: relative;
+  display: inline-block;
+  width: 0;
+  height: 1em;
+}
+
+.caret::before {
+  content: '▌';
+  position: absolute;
+  left: 0;
+  bottom: -0.02em;
+  line-height: 1;
+  color: var(--ink);
+  animation: caret-blink 1.06s steps(1) infinite;
+}
+
+.caret.is-off::before { display: none; }
+
+.field:not(.is-focus) .caret::before {
+  animation: none;
+  color: var(--ink-dim);
+}
+
+/* 选区：反白。真 input 是 opacity:0，所以这块由 mirror 画 */
+.sel {
+  background: var(--ink);
+  color: var(--bg);
+}
+
+@keyframes caret-blink {
+  50% { opacity: 0; }
+}
+
+/* 真 input：收字、管光标位置，但不显示；显示交给 .line */
+.cmd {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: transparent;
+  caret-color: transparent;
+  font: inherit;
+  opacity: 0;
+}
+
+.cmd:focus { outline: none; }
+
+/* ---------- 窄屏：上下叠 ---------- */
+/* 只在竖屏叠；横屏手机（844×390 这种）继续左右两栏，叠起来只剩一百多像素 */
+
+@media (max-width: 900px) and (orientation: portrait) {
+  body {
+    position: fixed;
+    inset: 0;
+    display: block;
+    overflow: hidden;
+  }
+
+  .screen {
+    width: 100%;
+    height: 100vh;                 /* 老浏览器兜底 */
+    height: var(--app-h, 100dvh);  /* 软键盘弹出时由 boot.js 写这个值 */
+    transform: translateY(var(--app-top, 0px));  /* iOS 会用可视视口去"平移"，跟着它走 */
+    border: 0;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(0, 1fr) minmax(0, 1fr) auto;
+    grid-template-areas:
+      "mem"
+      "doc"
+      "bar";
+  }
+
+  .col--doc {
+    border-left: 0;
+    border-top: 10px solid #000000;
+  }
+
+  .stream { -webkit-overflow-scrolling: touch; }
+}
+
+/* ---------- 触屏 / 窄屏：换成原生输入框 ---------- */
+/* 中文输入法组字时是看不见候选字的：镜像那套在手机上会让玩家以为没打上字。
+   竖屏窄屏或触屏一律用原生输入框 + 原生光标；桌面继续用块状光标。 */
+
+@media (max-width: 900px) and (orientation: portrait), (pointer: coarse) {
+  .line { display: none; }
+
+  .cmd {
+    opacity: 1;
+    color: var(--ink);
+    caret-color: var(--ink);
+  }
+}
+
+@media (pointer: coarse) {
+  body {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+}
+
+/* ---------- 动效预算 ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .caret::before { animation: none; }
+  * { transition: none !important; }
+}
+
+</style>
+</head>
+<body>
+<div class="screen">
+
+  <section class="col col--mem" id="pane-mem">
+    <div class="col__head">记忆</div>
+    <div class="stream" id="stream-mem" role="log" aria-live="polite" aria-label="记忆与系统输出"></div>
+  </section>
+
+  <div class="bar">
+    <div class="field">
+      <span class="viewport" id="viewport">
+        <span class="line" id="line"><span class="mirror" id="mirror" aria-hidden="true"></span><span class="caret" id="caret" aria-hidden="true"></span></span>
+        <input id="cmd" class="cmd" type="text" inputmode="text" enterkeyhint="go" autocomplete="off"
+               autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="指令输入">
+      </span>
+    </div>
+  </div>
+
+  <section class="col col--doc" id="pane-doc">
+    <div class="col__head">档案</div>
+    <div class="stream" id="stream-doc" role="region" aria-label="档案"></div>
+  </section>
+
+</div>
+
+<script>
+/* 构建生成，不要手改。源文件在 content/，改完跑 tools/build.mjs */
+window.SIWEI = window.SIWEI || {};
+window.SIWEI.CONTENT = {
+  version: 1,
+  entries: [
+    {"id":"m00-xuwu","title":"始于虚无","track":"memory","order":0,"requires":[],"person":[],"think":0,"unlocks":"回忆","unlockWhen":["d01-mail"],"answer":"","trigger":"","term":"","kind":"","mail":false,"news":false,"requireEarlier":false,"gate":0,"teaches":[],"learn":[],"blocks":[{"t":"p","lines":[[{"b":false,"v":"寂静的、空无一物的。"}],[{"b":false,"v":"无法为语言所描述的虚无。"}],[{"b":false,"v":"你的意识游荡于无垠虚无之中。"}]]},{"t":"p","lines":[[{"b":false,"v":"只是存在就耗尽了你的全部力气。"}],[{"b":false,"v":"你不知道自己缘何于此徘徊。"}]]},{"t":"p","lines":[[{"b":false,"v":"恍惚间，你嗅到消毒酒精的气味。鼻腔泛起轻微的刺痛感，于是你惶惑地察觉到，你或许拥有一具人类的躯体，以及一份参与协作的电子档案。考虑到你的身体状况，让我们从简单的问题开始："}]]},{"t":"p","lines":[[{"b":false,"v":"我是谁"}]]},{"t":"p","lines":[[{"b":false,"v":"思维系统赋予你无尽的时间。"}],[{"b":false,"v":"所以，请键入指令。"}]]}]},
+    {"id":"m01-shengconghelai","title":"生从何来","track":"memory","order":1,"requires":[],"person":["李小小"],"think":null,"unlocks":"","unlockWhen":[],"answer":"","trigger":"","term":"","kind":"","mail":false,"news":false,"requireEarlier":false,"gate":0,"teaches":[],"learn":[],"blocks":[{"t":"p","lines":[[{"b":false,"v":"你试图回忆自己的身份。这是个复杂的话题……你决定回到起始。"}]]},{"t":"p","lines":[[{"b":false,"v":"你诞生的那天，召亭县风雨交加。在之后的十几年里，你的奶奶、妈妈和两个小叔叔对你讲述了十万遍，你是如何诞生在出租屋的床褥上、雨水如何潲进屋里，还有那个男人的背影。"}]]},{"t":"p","lines":[[{"b":false,"v":"两个月后，奶奶带你回了乡下。"}]]},{"t":"p","lines":[[{"b":false,"v":"你记事的时候，村里几乎没有同龄孩子了。硬要说年岁相近的，还有只看门的土狗。奶奶叫它小黄。有时她嫌你做事磨蹭了，就指着小黄教育你："}]]},{"t":"p","lines":[[{"b":false,"v":"“支使你还不如支使它！”"}]]},{"t":"p","lines":[[{"b":false,"v":"某种意义上，你和小黄算是竞争对手。村里人都说小黄通人性，一夸它就摇尾巴。在通人性的竞争中，你输得很惨。"}]]},{"t":"p","lines":[[{"b":false,"v":"四岁的时候，奶奶带你和小黄去赶集。集上跟人吵起来，小黄就跳上去咬人，把人脚腕子咬出血来，缝了四五针。奶奶怏怏地赔了不少钱。回到村里，几个胡同的亲戚邻居都听说了，当着小黄的面、讨论对它的处置。众人一致认定，咬人的狗留不得——"}]]},{"t":"p","lines":[[{"b":false,"v":"两棍子敲头、打死了事。"}]]},{"t":"p","lines":[[{"b":false,"v":"在那之后，奶奶再去上田时，习惯找根长布条，把你拴在大门口的树底。既是让你看门，也是怕你被路过的花子拍走了。想也可笑。枪毙都吓不住人贩子，一根布条又能拦住什么。"}]]},{"t":"p","lines":[[{"b":false,"v":"奶奶家在胡同口。隔壁是一对夫妇，两人都跟着镇上的建筑队，附近村里谁家有活，就坐上电三轮的斗子，与锨子抹子一块儿运到工地上。按辈分，你称呼他俩三舅、三妗子。每每见你被拴在门口，他们就热切地招呼，叫你去他们家里坐。"}]]},{"t":"p","lines":[[{"b":false,"v":"你低头不应。"}]]},{"t":"p","lines":[[{"b":false,"v":"奶奶是个刚强的人，从来不许别人帮她的忙。三舅三妗子把你带回家看顾，就是拂了她的面子，暗示她看不好孩子。所谓远亲不如近邻，她不能朝三舅一家发难，只好赔笑把你拎回家去，关起门来叱责你不够落落大方，丢了她的脸。"}]]},{"t":"p","lines":[[{"b":false,"v":"于是你不应声。他们后来不再招呼了。"}]]},{"t":"p","lines":[[{"b":false,"v":"再后来，邻亲路过时，往往当着你的面，说你是不说话的痴孩子。"}]]},{"t":"p","lines":[[{"b":false,"v":"你没有任何感想，只觉得无聊。太过年幼的你、连产生感想的能力都没有。那时你盯着自己的胳膊，盯着那些蚊虫叮咬造成的斑驳痕迹。蚂蚁沿着凉鞋爬上来，然后被你碾死——碾死了事。"}]]},{"t":"p","lines":[[{"b":false,"v":"死亡就是这么简单的事，人类也只是肉蚂蚁罢了。多年后，面对无法逃避的死亡，你也同样如此宽慰自己。"}]]}]},
+    {"id":"m02-guanghui","title":"光辉岁月","track":"memory","order":2,"requires":[],"person":["李光辉"],"think":null,"unlocks":"","unlockWhen":[],"answer":"","trigger":"","term":"","kind":"","mail":false,"news":false,"requireEarlier":false,"gate":0,"teaches":[],"learn":["李光辉","左旭升","薛怜","江恒生","李胜利"],"blocks":[{"t":"p","lines":[[{"b":false,"v":"在你七岁这一年，发生了两件大事和三件小事。"}]]},{"t":"p","lines":[[{"b":false,"v":"大事其一，你被送到县城念小学，并拥有了“学名”。你的学名没有恶意，只是太过敷衍，就如同父母对你的期盼。他们无所期盼。你对学校也同样无所期盼。同龄人的吵闹让你无所适从，你无法加入任何人的话题。"}]]},{"t":"p","lines":[[{"b":false,"v":"大事其二，你结识了李光辉。李光辉崭新出厂，尚不能流利地与人交谈。寡言的你与他相见甚欢，二人迅速发明出一套前无古人的手语。这门手语的存世时长只有八个月，因李光辉掌握口语而宣告消亡。"}]]},{"t":"p","lines":[[{"b":false,"v":"你从不认为李光辉比你聪明。"}]]},{"t":"p","lines":[[{"b":false,"v":"他只是天然擅长“大大方方”的做派，对世界展现出不计后果的自信与不惧牺牲的热情。名字会塑造一个人。因为是天生的光辉，就被潜移默化地被培养成世界的中心。而你……你是他的小小注脚，是光辉下的阴翳：“你们家光辉真够机灵，以后肯定不愁进社会。小小嘛……也挺懂事的。”"}]]},{"t":"p","lines":[[{"b":false,"v":"你对外部评价并不在意。也许有1%的在意。在这一尺度下，李光辉至少有99%。毕竟品尝过被人捧在掌心赞美的滋味，飘飘欲仙也是可以理解的，更何况他在家里是个外人，就更渴望他人的认可。"}]]},{"t":"p","lines":[[{"b":false,"v":"过分在意他人的评价，就会成为他人的玩具。你越对李光辉冷淡无视，他就越对你恭敬有加，殷切地期待着你能给予他高度评价。你发现人和狗其实是一样的。被夸就会摇尾巴，挨骂就会躲起来难过。你自认为窥见了世界真理，从此不再和狗群来往，最大的爱好是逛店，只看不买；次大的爱好是，幻想自己在异世界只手遮天。"}]]},{"t":"p","lines":[[{"b":false,"v":"至于其他小事，可以概括为三句话。召亭辛家埠发生了一起恶性杀人案；江恒生把母亲的钱全部卷走后下落不明；李胜利因病死亡。"}]]},{"t":"p","lines":[[{"b":false,"v":"为了赶在春节前办完白事，李胜利被草草烧成灰，埋进县城的社区墓地。召亭的冬天向来干冷，李光辉闹着要回家，左旭升把他抱起来哄了又哄，还是无果。直到薛怜过来训了他两句，他才闭上嘴巴、不敢再哭。"}]]},{"t":"p","lines":[[{"b":false,"v":"这就是你的七岁。"}]]}]},
+    {"id":"m03-chuanqi","title":"传奇时代","track":"memory","order":3,"requires":[],"person":["左旭升","薛怜"],"think":null,"unlocks":"","unlockWhen":[],"answer":"","trigger":"","term":"","kind":"","mail":false,"news":false,"requireEarlier":false,"gate":0,"teaches":[],"learn":["李光辉","左旭升","薛怜"],"blocks":[{"t":"p","lines":[[{"b":false,"v":"在母亲的描述中，薛怜就好比周处，年轻时为祸一方，经历一番波折后回心转性重回正道——你认识他的时候，他已经升到高级检察官了；相较之下，左旭升就逊色许多，不过是万万千千的小商人中的一个成功者，经过一番投机倒把侥幸赚到了大钱。"}]]},{"t":"p","lines":[[{"b":false,"v":"读到初中时，左旭升和薛怜来你家的次数变多了，时不时留下吃饭。李光辉对此无比雀跃。在他的认知中，左旭升成为他的父亲，已是板上钉钉的事了。这颗钉子一钉就是十几年。"}]]},{"t":"p","lines":[[{"b":false,"v":"所谓食不可不言、寝不可不语。召亭饭桌上可以没有酒菜，但不能没有话题。"}]]},{"t":"p","lines":[[{"b":false,"v":"“嫂子，名字是很重要的。我念书的时候天天打架，就是因为名字。你要给小小一个好名字，她将来才会受人尊重。”"}]]},{"t":"p","lines":[[{"b":false,"v":"“哪有那么严重。那时候野孩子多，你是年轻学坏了嘛。”"}]]},{"t":"p","lines":[[{"b":false,"v":"“不不，真是因为名字。当初我爸去上户口，说我叫薛凌，两点水的凌。户籍科的人不会写凌字，写了两点水的令，变成了冷。但他也知道冷肯定不念凌，又把两点水划掉了。录档的人接过去，还以为两点一划是个竖心旁。到上学的时候，我已经变成薛怜了。你问旭升，他见过的，我小时候天天挨打，要不是后来跟了胜利哥，我早就辍学了。”"}]]},{"t":"p","lines":[[{"b":false,"v":"“一开口天花乱坠的，嫂子你别信他。他别打人就谢天谢地了，发作起来谁都拦不住。话又说回来，是得给小小起个好名。你看我现在开公司，招人也是喜欢名字好听的。名字就是名片，能代表一个人的阶级出身，要不大人物发迹之后都改名呢。”"}]]},{"t":"p","lines":[[{"b":false,"v":"比起自己的名字，你更好奇左旭升和薛怜的过去。关于薛怜四人组的为祸一方，你早已听过无数人的无数版本，其中不乏炸矿挖沙与烧杀抢掠的奇闻，要不是召亭没有港口，估计还得加上偷船走私和吸毒贩毒。在两点一线的学生时代，能与如此传奇人物相处，实在令你感到新鲜。"}]]},{"t":"p","lines":[[{"b":false,"v":"“你们都是做大事的人。胜利有你们这样的兄弟，泉下也能瞑目了。我对俩孩子也没什么要求，安安稳稳在家，别惹事就好。现在时代不一样了，光辉在学校都不打架的。”"}]]},{"t":"p","lines":[[{"b":false,"v":"“我也打架。我能一个打好几个！”李光辉急得饭都咽不下去，抻直脖子反驳，“我还要组建光荣帮呢！”"}]]},{"t":"p","lines":[[{"b":false,"v":"薛怜点头作沉思状：“我认识一个人，也说要组建自己的帮派。你猜后来怎么样？”"}]]},{"t":"p","lines":[[{"b":false,"v":"“赢了还是输了？”"}]]},{"t":"p","lines":[[{"b":false,"v":"“答案是死了。”"}]]},{"t":"p","lines":[[{"b":false,"v":"左旭升适时接过了话题，视线逡巡于你和李光辉之间：“所以，你们一定要好好念书。凭拳头就能取胜的时代一去不复返了。要站到更高的地方。站到不需要拳头的地方去，我讲的清楚吗？”"}]]},{"t":"p","lines":[[{"b":false,"v":"你自动过滤了所有劝学式的对话。也许那个时代真的过去了，然而混乱之中才能诞生传奇。年轻的你渴望真正波澜壮阔的史诗，而现实回馈你的，只有饭桌上的闲谈，以及一本又一本的练习册。"}]]}]},
+    {"id":"m04-xuyu","title":"须臾恒生","track":"memory","order":4,"requires":[],"person":["江恒生"],"think":null,"unlocks":"","unlockWhen":[],"answer":"","trigger":"","term":"","kind":"","mail":false,"news":false,"requireEarlier":false,"gate":0,"teaches":[],"learn":["李小小","李光辉","左旭升","薛怜","江恒生","李胜利"],"blocks":[{"t":"p","lines":[[{"b":false,"v":"高考结束后，与无数召亭学子一样，你紧锣密鼓地开始……考驾照。"}]]},{"t":"p","lines":[[{"b":false,"v":"驾校建在镇上，每天来回要三四十分钟。母亲年轻时开车出过事故，从此再也不敢摸方向盘。九百块的修车钱严重打击了母亲的自信力。随着打破女司机偏见的浪潮兴起，她愈发抗拒开车，生怕自己给女人丢了脸。"}]]},{"t":"p","lines":[[{"b":false,"v":"接送你的任务被外包给左旭升和薛怜。左旭升上班晚，负责送你过去；薛怜下班早，负责接你回来。"}]]},{"t":"p","lines":[[{"b":false,"v":"对于考驾照，左旭升给不出任何建议。"}]]},{"t":"p","lines":[[{"b":false,"v":"“你舅舅运气最好。当年我们三个去车考，只有你舅舅是自己考上的。交警队的人非说我压线，想诈我的补考费。我被否了两回，托别人替考才过的。之后薛怜去考，我就买了两条烟给他，他给考官捎去，当天就过了。现在肯定不能这么搞，早时候召亭太乱了，没办法的事。”"}]]},{"t":"p","lines":[[{"b":false,"v":"正是由于左薛这类情况的存在，到你十七岁这年，驾考已经变成无聊的按部就班，车内车外遍布摄像头，笔试路考全部引入机器检测。作为召亭人，你自然是站在交警的对立面，暗骂其恃权敛财的卑劣行径。"}]]},{"t":"p","lines":[[{"b":false,"v":"“知道吗，你舅舅要回来了。”铺垫了半天，左旭升引出正题，“你见过我们年轻时的合照片吧？四个人里戴眼镜的就是他。”"}]]},{"t":"p","lines":[[{"b":false,"v":"“他不是死了吗？”"}]]},{"t":"p","lines":[[{"b":false,"v":"“小薛的话你也信？你舅舅是去南方做生意了。”"}]]},{"t":"p","lines":[[{"b":false,"v":"赶在暑假的末尾，你见到了江恒生。彼时的江恒生已经沦落成气质庸俗的中年人，身形臃肿地踞在沙发上，对母亲颐指气使。你向来不信任亲缘联系。哪怕母亲和小叔叔以言语不断塑造李胜利的高大形象，然而死亡模糊了你对他的记忆，直到他被简化成一个象征父亲的符号。"}]]},{"t":"p","lines":[[{"b":false,"v":"对李胜利尚且如此，针对阔别数年的江恒生，你更是如临大敌——当年是他卷走了家里的钱，抛下母亲和李胜利逃跑了！"}]]},{"t":"p","lines":[[{"b":false,"v":"“小小长这么大了？小时候我还抱过你呢。”他讪讪地对你示好。你不应声。"}]]},{"t":"p","lines":[[{"b":false,"v":"其实你已经不是李小小了。你的驾照上写了自己的新名字。你翻了许久的字典，才确认自己的新名字。薛怜说得对，名字会改变很多。你已经不小了。"}]]},{"t":"p","lines":[[{"b":false,"v":"“光辉，就是他！就是这个四眼！”"}]]},{"t":"p","lines":[[{"b":false,"v":"你和光辉结成同盟，用尽手段把江恒生赶出家门。大学报道那天，直到母亲和李光辉送你到火车站，你都不忘叮嘱他们："}]]},{"t":"p","lines":[[{"b":false,"v":"“妈，你以后千万不要理他！他要是敢借钱，你就找人揍他！李光辉，家里就交给你，有事给我打电话。一定别让他再进家门！”"}]]}]},
+    {"id":"m05-hongyan","title":"红颜枯骨","track":"memory","order":5,"requires":[],"person":["杨天一"],"think":null,"unlocks":"","unlockWhen":[],"answer":"","trigger":"","term":"","kind":"","mail":false,"news":false,"requireEarlier":false,"gate":0,"teaches":[],"learn":["李光辉","薛怜","丁凯奇"],"blocks":[{"t":"p","lines":[[{"b":false,"v":"对于美人，你自有一条准则：美而不自知，是美人的基本修养。可惜，现实中的美人们，往往自幼被无数赞美裹挟，难得不自知。自知并非罪过，然而至少得装作不自知，并克制住引人关注的欲望，否则就显得卖弄风骚，沦落俗套。"}]]},{"t":"p","lines":[[{"b":false,"v":"按照这套标准，丁凯奇的确是称职的美人。唯一的缺点是——"}]]},{"t":"p","lines":[[{"b":false,"v":"“凯哥看着不太高兴啊。”李光辉正挥着铁锨挖土，悄悄给你使了个眼色，“是不是你对他太凶了？我觉得你有时候讲话……”"}]]},{"t":"p","lines":[[{"b":false,"v":"“你挖快点行吗？要不我把这个也复活，让它和你一块儿挖？”"}]]},{"t":"p","lines":[[{"b":false,"v":"丁凯奇通常面无表情。"}]]},{"t":"p","lines":[[{"b":false,"v":"这并不是他天性高冷，你见过他在饭局上给薛怜敬酒时，毕恭毕敬的谄媚笑容。他的表情管理非常出色。太出色了。可恶的装货。你偶尔会想杀了他。"}]]},{"t":"p","lines":[[{"b":false,"v":"然而，不是所有人都能面无表情地处理尸体。你瞥了眼铁锨都抓不稳的李光辉，对丁凯奇的好感又增加一层。待你把死者衣物剪开褪净，丁凯奇戴好手套、就地捡了几块石头，尽可能对死者面部进行破坏，并砸碎了部分头骨。"}]]},{"t":"p","lines":[[{"b":false,"v":"“头发极难分解。要不我们烧掉吧。”丁凯奇顺手将两块小石头塞入死者软烂凹陷的眼眶，随后抬眼同你对视。视线交织，由于对方没有表情，你不确定他是认真的还是开玩笑。"}]]},{"t":"p","lines":[[{"b":false,"v":"“荒岛求生是吧，搞点明火和烟雾，生怕别人看不见你？”"}]]},{"t":"p","lines":[[{"b":false,"v":"“我特意带了打火机，只烧衣服也可以。”"}]]},{"t":"p","lines":[[{"b":false,"v":"“你的火技能有时空限定吗？必须现在用？”"}]]},{"t":"p","lines":[[{"b":false,"v":"“天气预报说下周有雨，尸体可能被冲出来。”"}]]},{"t":"p","lines":[[{"b":false,"v":"“所以把坑挖深是为了健身？”"}]]},{"t":"p","lines":[[{"b":false,"v":"“那如果……”"}]]},{"t":"p","lines":[[{"b":false,"v":"“我求你了，埋个人哪来那么多事儿？写侦探小说的来了。把铲子拿上，过来跟我俩一块儿挖。”"}]]},{"t":"p","lines":[[{"b":false,"v":"丁凯奇拎起一把长锨跳进坑里，沉吟片刻：“你说分尸会不会效果更好？”"}]]},{"t":"p","lines":[[{"b":false,"v":"“光辉。要不把他也埋了吧。”"}]]},{"t":"p","lines":[[{"b":false,"v":"“我？我吗？确定吗……？”"}]]},{"t":"p","lines":[[{"b":false,"v":"不愧是李光辉。光辉惶惑的神情，成功让你和丁凯奇相视而笑。为了避免丁凯奇的絮烦唠叨，在这之后的许多年里，你再没制造过如此简陋的案件。"}]]}]},
+    {"id":"m06-youxia","title":"有暇赴死","track":"memory","order":6,"requires":[],"person":["许应杰"],"think":null,"unlocks":"","unlockWhen":[],"answer":"","trigger":"","term":"","kind":"","mail":false,"news":false,"requireEarlier":false,"gate":0,"teaches":[],"learn":["李光辉","杨天一","许应杰","丁凯奇"],"blocks":[{"t":"p","lines":[[{"b":false,"v":"你举枪对准许应杰，接连扣下扳机。"}]]},{"t":"p","lines":[[{"b":false,"v":"你甚至不需要认真瞄准，只是随意地连开四五枪。"}]]},{"t":"p","lines":[[{"b":false,"v":"在许应杰倒地的瞬间，一个虚影已扑到你面前，钳住你的脖颈，将你狠狠摔在地上。后背被膝盖顶住，你强忍疼痛拼命去寻找唯一的救命法宝，你的枪……"}]]},{"t":"p","lines":[[{"b":false,"v":"你的枪不在手里了！"}]]},{"t":"p","lines":[[{"b":false,"v":"“凯哥，凯哥你先放开她。你听我说——”"}]]},{"t":"p","lines":[[{"b":false,"v":"是李光辉的声音，从房间更深处传来。你被压得抬不起头，只能靠声音判断情况。李光辉的声音停在原地。他一定是被枪吓住了。"}]]},{"t":"p","lines":[[{"b":false,"v":"“我明明把他的行动都发给你们了，你们为什么不跑！他要找的是杨天一，就算跟他打照面也无所谓，为什么要杀他？……为什么非要杀他！”"}]]},{"t":"p","lines":[[{"b":false,"v":"丁凯奇的声音从头顶传来。他压住音量，夹杂着短促的咽音。李光辉咬着牙回应，声线发抖。"}]]},{"t":"p","lines":[[{"b":false,"v":"“凯哥！杀许应杰是旭哥默许的。许应杰必须得死。他今天是一个人来的，只有你知道他要来这儿。如果他抓不到杨天一，你解释不了——你、你先把她放开，我求你了凯哥，我们这么多年交情，你要因为许应杰跟我们翻脸吗？”"}]]},{"t":"p","lines":[[{"b":false,"v":"身体上方的压制松开了。你踉跄着爬起来，李光辉伸手拉了你一把，将你护在身后。"}]]},{"t":"p","lines":[[{"b":false,"v":"“凯哥，我知道你和许应杰关系好……可是……姐、姐你也说句话呀！”"}]]},{"t":"p","lines":[[{"b":false,"v":"喘匀了气，你终于有机会打量起对面的丁凯奇。碎发凌乱地盖在眉骨下方，他下半张脸依然没有表情，只是嘴唇在颤抖。卡其色衬衫已经被血浸透大半，湿漉漉地贴在身上……他身上有血？"}]]},{"t":"p","lines":[[{"b":false,"v":"“不好意思，我有点应激了。是许应杰先掏枪的。我以为……”你被勾起一丝恻隐之心，嘟囔着向丁凯奇道歉，“我以为他是来找光辉的。但是没事，我的枪是自制的，没有编号。你可以拿走。”"}]]},{"t":"p","lines":[[{"b":false,"v":"你死盯着丁凯奇掌心攥紧的手枪。对峙片刻后，后者举枪朝墙，子弹打空，枪被丢在地上。"}]]},{"t":"p","lines":[[{"b":false,"v":"“你们走吧。我要报警了。”"}]]}]},
+    {"id":"m07-shenxun","title":"审讯室内","track":"memory","order":7,"requires":[],"person":["范泽"],"think":null,"unlocks":"","unlockWhen":[],"answer":"","trigger":"","term":"","kind":"","mail":false,"news":false,"requireEarlier":false,"gate":0,"teaches":[],"learn":["李光辉","左旭升","许应杰","范泽","丁凯奇"],"blocks":[{"t":"p","lines":[[{"b":false,"v":"自许应杰死后，你和丁凯奇陷入了微妙的冷战。冷战的特点是对抗与缓和交替，你与丁凯奇的关系也是如此。有需要面谈的情况，他会屈尊坐地铁来找你，或者你骑摩托车去找他。除此之外，你们没有更多联系。"}]]},{"t":"p","lines":[[{"b":false,"v":"坦白讲，你对此极其恼火。许应杰的死是左旭升默许过的，丁凯奇的迁怒简直毫无道理。虽然你也确实犯了错，比如不小心打中了丁凯奇……可他又没死！不就是打了他一枪吗？你可是实打实被他扔到地上了！他至今都没道歉！"}]]},{"t":"p","lines":[[{"b":false,"v":"也正因此，对于丁凯奇的死，你深感空虚。这并不意味着你喜欢丁凯奇，恰恰相反，尽管李光辉无数次企图撮合你和丁凯奇，但你确实对他缺少激情。在你看来，倘若没有检察官和杀人犯的光环，丁凯奇只是个模样漂亮的人渣。你常年期待他死于某种猎奇荒诞的谋杀，而不是莫名其妙从阳台掉下去摔死。"}]]},{"t":"p","lines":[[{"b":false,"v":"怀着这种心情，你参与了对范泽的询问。"}]]},{"t":"p","lines":[[{"b":false,"v":"“你和丁凯奇是什么关系？”"}]]},{"t":"p","lines":[[{"b":false,"v":"“算是情侣吧。还没有正式确立关系。”"}]]},{"t":"p","lines":[[{"b":false,"v":"情侣？别开玩笑了，丁凯奇讨厌她这种畏畏缩缩的类型。你见过他所有前任，他的取向一直是阳光开朗大小姐——把阳光吸干再断崖式分手。"}]]},{"t":"p","lines":[[{"b":false,"v":"“说说昨晚的情况。”"}]]},{"t":"p","lines":[[{"b":false,"v":"“我当时在洗澡。洗完澡出来，他不在客厅。我给他打电话，发现他手机还在沙发上。我就坐在沙发上看电视，以为他是下楼了。过了一会儿，听见楼下有人乱糟糟地喊，才知道他是掉下去了。”"}]]},{"t":"p","lines":[[{"b":false,"v":"拙劣的谎言。丁凯奇的手机上有她的指纹。阳台窗户上也有她的指纹，客厅的矮脚木椅上也有她的指纹。你几乎脑内还原出她的杀人手法了。"}]]},{"t":"p","lines":[[{"b":false,"v":"你没有问出口。你不想在审讯室暴露自己的怀疑。反正她肯定也会说「我只是开窗透透气」。"}]]},{"t":"p","lines":[[{"b":false,"v":"“然后呢？”"}]]},{"t":"p","lines":[[{"b":false,"v":"“然后我就回家了。 ”"}]]},{"t":"p","lines":[[{"b":false,"v":"“为什么？你们不是暧昧关系吗？他死了你就正常回家了？”"}]]},{"t":"p","lines":[[{"b":false,"v":"“我也不知道……就是害怕吧。”"}]]},{"t":"p","lines":[[{"b":false,"v":"谎言。还是谎言！你暗自愤懑着。她怎么会不知道？尸检报告显示，他死前拼命想攀住窗框，右手指节都磨出了血，她竟然说不知道！"}]]},{"t":"p","lines":[[{"b":false,"v":"“事发当时，你有没有听到他的声音？”"}]]},{"t":"p","lines":[[{"b":false,"v":"“没有。浴室的水声很吵。可能他叫过我。我当时什么都没听到。要是我听到就好了。”"}]]},{"t":"p","lines":[[{"b":false,"v":"你的确不认为丁凯奇会撕心裂肺大喊大叫，然而你清楚地知道，昨晚现场勘察时，浴室地面是干的，热水器也没有使用痕迹。要不是碍于身份，你真想狠狠给她两耳光，逼问她为什么要……算了，想杀丁凯奇是人之常情。你深吸一口气，告诫自己不要发作。"}]]},{"t":"p","lines":[[{"b":false,"v":"“对于这件事，你有什么看法？”"}]]},{"t":"p","lines":[[{"b":false,"v":"“我真的什么都不知道。昨天是他约我出来的，我这里有聊天记录。你看，他说想见我一面。”"}]]},{"t":"p","lines":[[{"b":false,"v":"聊天记录如果可信，你早就是光明会的首脑了。无论她再怎么辩解，都不可能打消你对她的怀疑。你不相信丁凯奇会死得如此草率，正如你完全不相信范泽的任何证言。"}]]},{"t":"p","lines":[[{"b":false,"v":"讯问结束后，你大发慈悲放她回家。"}],[{"b":false,"v":"望着她的背影，你暗暗下定决心。"}]]},{"t":"p","lines":[[{"b":false,"v":"一定要给她定罪。一定要。"}]]}]},
+    {"id":"m08-bielai","title":"别来无恙","track":"memory","order":8,"requires":[],"person":["韩维恩"],"think":null,"unlocks":"","unlockWhen":[],"answer":"","trigger":"","term":"","kind":"","mail":false,"news":false,"requireEarlier":false,"gate":0,"teaches":[],"learn":["杨天一","韩维恩","麦子期","韩彬"],"blocks":[{"t":"p","lines":[[{"b":false,"v":"说起来，新星小组这个称呼，还是你从韩彬口中得来的。新星？听起来简直是厕纸小说的厕纸命名法。你已经28岁，中二病的时代一去不复返。"}]]},{"t":"p","lines":[[{"b":false,"v":"当你直白地提出这个问题时，麦子期正招呼服务员，要求先来五十串烤五花、五十串烤牛肉、二十串烤鸡翅和十二串烤鱿鱼；韩维恩则小发雷霆，并不坚决地抵制其奢靡铺张、气焰嚣张和自作主张，毕竟落座前两人已经敲定，今晚由韩维恩请客。"}]]},{"t":"p","lines":[[{"b":false,"v":"“所以为什么叫新星小组？土得要死。”"}]]},{"t":"p","lines":[[{"b":false,"v":"“我们名义上属于新星法律咨询事务所，所以内部会这样称呼。仅此而已。”"}]]},{"t":"p","lines":[[{"b":false,"v":"韩维恩在第一时间回答了你。与麦子期相比，他的外表相对更年轻。太过年轻。你不得不问出那个问题：“你不会是初中生吧？”"}]]},{"t":"p","lines":[[{"b":false,"v":"“……不是。我成年了。”"}]]},{"t":"p","lines":[[{"b":false,"v":"“哦……哦。”"}]]},{"t":"p","lines":[[{"b":false,"v":"你摆出一副了然的神情。考虑到社交礼仪，你不再问下去。麦子期将硬卡纸材质的菜单递给你，你顺势转移话题：“你找到住处没有？宜州租房挺方便的，纯线上就能签合同，不用跟房东和中介见面。”"}]]},{"t":"p","lines":[[{"b":false,"v":"“还真是，本质一键租房了。你都不知道，我之前在禾港租房，被人骗得狗一样团团转——”"}]]},{"t":"p","lines":[[{"b":false,"v":"“千言万语、桥洞等你。禾港疑似真没人了，连某些混子都能参加项目。但使禾港飞将在，不教马鹿渡宜州了。”"}]]},{"t":"p","lines":[[{"b":false,"v":"“错误的。你这种搞刑技的就是不懂实践。没了我、就剩你和小维孤儿寡女，杨天一杀过来怎么办？好不容易高山流水再聚首，我是怕你英年早逝。”"}]]},{"t":"p","lines":[[{"b":false,"v":"“我英年早过了，大不了一死。反正大器晚成者少，大器没成者众。杨天一再厉害也是人，人类就是一大块行走的五花肉，加点孜然就端上烤架了……”"}]]},{"t":"p","lines":[[{"b":false,"v":"你一边同麦子期闲扯，一边在菜单上打钩。你不记得自己点了什么。人类的记忆不可能面面俱到，你的回忆也仅仅包含“你曾注意到的事物”。这之后的记忆无法读取。你拼命回忆，只能联想到模糊的音频。你听见韩维恩在唤你的名字、小声劝你别喝了，背景音是麦子期猖狂的笑："}]]},{"t":"p","lines":[[{"b":false,"v":"“哈哈！你喝太慢了——我赢定了！”"}]]}]},
+    {"id":"m09-zitouluowang","title":"自投罗网","track":"memory","order":9,"requires":[],"person":["麦子期"],"think":null,"unlocks":"","unlockWhen":[],"answer":"","trigger":"","term":"","kind":"","mail":false,"news":false,"requireEarlier":false,"gate":0,"teaches":[],"learn":["李光辉","杨天一","范泽","韩维恩","麦子期","丁凯奇","赵烁"],"blocks":[{"t":"p","lines":[[{"b":false,"v":"在李光辉的出租屋，你找到麦子期的尸体。自从范泽死后，这是你和李光辉首次见面。你翻找了范泽留下的书包，把她的身份证揣在身上，预备联系下家卖掉。抬眼，麦子期的尸体还在原地。"}]]},{"t":"p","lines":[[{"b":false,"v":"你叹了口气。"}]]},{"t":"p","lines":[[{"b":false,"v":"“怎么搞的？他是禾港来的警察，处理起来很麻烦的。”"}]]},{"t":"p","lines":[[{"b":false,"v":"李光辉坐在沙发上咬指甲：“可他、他……他问我南堤口的事！”"}]]},{"t":"p","lines":[[{"b":false,"v":"“……什么意思？”"}]]},{"t":"p","lines":[[{"b":false,"v":"“我也不知道。但是他问得很笃定，仿佛他知道死的人就是杨天一。当时境况只有我们三个知道，你在警局也没见到线索，他怎么会找到我呢？”"}]]},{"t":"p","lines":[[{"b":false,"v":"这不是废话。话没套完就把人杀了，当然是什么都不知道。你逃避了这个问题，低头开始刷手机，发现韩维恩更新了文档。……说实在话，他最近写的文档你已经没在看了。别说看文档，你连赵烁的询问都没做。你随便挑了最新的一份。"}]]},{"t":"p","lines":[[{"b":false,"v":"……？"}]]},{"t":"p","lines":[[{"b":false,"v":"“他给外面打电话了？”你瞪了李光辉一眼。"}]]},{"t":"p","lines":[[{"b":false,"v":"“不、不是，他跟我差不多高，我怕打不过他，就想先把他头敲昏，然后去厨房找刀。回来发现他已经醒了，一边往阳台爬一边打电话，我就给他挂断了。最多打了半分钟。而且他也没报警。”"}]]},{"t":"p","lines":[[{"b":false,"v":"打给韩维恩，也跟报警没区别了。你气极反笑，循着韩维恩的文档，还真找到一点线索。"}]]},{"t":"p","lines":[[{"b":false,"v":"“我们审杨天一的录音被他拿到了。”"}]]},{"t":"p","lines":[[{"b":false,"v":"“被谁？”"}]]},{"t":"p","lines":[[{"b":false,"v":"“他。”你脚尖踢了踢麦子期的尸体，深吸一口气，安慰自己韩维恩不是正式警员，手头也没有实打实的证据。没有你这个上级的书面签字，他不可能调来本部的警力。再者说，以韩维恩的体格，要制服李光辉？简直天方夜谭。退两万步说，你印象中的韩维恩，是个一板一眼的小孩。这种人是不会贸然行动的。绝对不会。总而言之，你只要等他来找你就好。如果事态紧急，他会给你打电话的。应该会的。"}]]},{"t":"p","lines":[[{"b":false,"v":"“录音？不应该啊……按理说应该只有凯哥有的，顶多再给薛检发一份。凯哥和薛检总不能举报自己吧？”"}]]},{"t":"p","lines":[[{"b":false,"v":"“死人做什么都有可能。怪不得范泽和丁凯奇必须在家里见面。也许就是为了那份录音。”"}]]},{"t":"p","lines":[[{"b":false,"v":"“那现在怎么办。去把跟他打电话的人也杀了？反正那个也是你的人。”"}]]},{"t":"p","lines":[[{"b":false,"v":"“什么年代了还在杀杀杀……你三岁吗？本来就已经够烦了，范泽还被四眼逼得跳了河，简直人渣和弱智同频共振。先把他弄冰箱里去，再找个地方吃饭吧。边吃边想办法。”"}]]},{"t":"p","lines":[[{"b":false,"v":"“我想吃方便面。我们待会儿去楼下711吧。”"}]]}]},
+    {"id":"d00-news","title":"今日要闻","track":"doc","order":0,"requires":[],"person":[],"think":null,"unlocks":"","unlockWhen":[],"answer":"","trigger":"","term":"","kind":"","mail":false,"news":true,"requireEarlier":false,"gate":0,"teaches":[],"learn":[],"blocks":[{"t":"p","lines":[[{"b":false,"v":"宜州日报讯"}]]},{"t":"p","lines":[[{"b":false,"v":"8月29日下午，宜州市龙江路与中山大道交叉口附近发生一起交通事故。"}]]},{"t":"p","lines":[[{"b":false,"v":"一辆黑色本田轿车冲入路边一家711便利店，造成一死一伤。涉事司机韩某恩已被警方控制，事故详细原因仍在进一步调查中。"}]]},{"t":"p","lines":[[{"b":false,"v":"据现场初步了解，事故发生于8月29日15时40分许。韩某恩（男，22岁，籍贯江苏宣阳，持C1驾驶证）驾驶一辆黑色本田轿车，沿龙江路由东向西行驶。车辆行至事发路段时，车辆直穿人行道，撞碎711便利店玻璃门后冲入店内约8米。"}]]},{"t":"p","lines":[[{"b":false,"v":"店内顾客李某某（男，24岁）在收银台附近遭车辆撞击，经急救人员确认已无生命体征，系当场死亡。另一顾客范某（女，29岁）被撞倒后遭货架挤压，造成骨盆骨折、多处软组织挫伤及失血性休克，已被消防人员救出，紧急送往宜州市人民医院重症监护室救治。截至发稿时，范某仍在进一步治疗中。"}]]}]},
+    {"id":"d01-mail","title":"未命名邮件","track":"doc","order":1,"requires":[],"person":[],"think":null,"unlocks":"检索","unlockWhen":[],"answer":"","trigger":"","term":"","kind":"","mail":true,"news":false,"requireEarlier":false,"gate":0,"teaches":[],"learn":["丁凯奇坠楼事件","韩维恩","丁凯奇","南堤口杀人埋尸案"],"blocks":[{"t":"p","lines":[[{"b":false,"v":"发件人：韩维恩"}]]},{"t":"p","lines":[[{"b":false,"v":"请原谅我措辞冷淡。"}],[{"b":false,"v":"我的时间非常有限。"}]]},{"t":"p","lines":[[{"b":false,"v":"首先，由于被警方控制，我已无法参与丁凯奇坠楼事件的后续调查。"}]]},{"t":"p","lines":[[{"b":false,"v":"其次，尽管我对文档名称进行过简单整理，但我无法逐一检查文档编辑情况，也从未确认正式版文档。如果您读到非正式的编辑记录或未经整理的文档，请自行判断其价值。"}]]},{"t":"p","lines":[[{"b":false,"v":"再次，南堤口杀人埋尸案的嫌疑人已确认死亡。由于事态紧急，我不得不采取特殊措施控制嫌疑人。一切后果由我个人承担。"}]]},{"t":"p","lines":[[{"b":false,"v":"最后，恕我无法为您提供更多帮助。"}]]},{"t":"p","lines":[[{"b":false,"v":"以上。"}]]}]},
+    {"id":"d02-dingkaiqi","title":"丁凯奇坠楼事件","track":"doc","order":2,"requires":[],"person":[],"think":null,"unlocks":"","unlockWhen":[],"answer":"","trigger":"","term":"","kind":"","mail":false,"news":false,"requireEarlier":false,"gate":0,"teaches":[],"learn":["询问记录-韩彬","询问记录-范泽","范泽","韩维恩","麦子期","李珀涯","丁凯奇","韩彬"],"blocks":[{"t":"p","lines":[[{"b":false,"v":"出于审慎考虑，本文档首次编辑尽可能地收录了已确认的事实。由于本人对文书工作不甚熟稔，本文档不适用于任何官方用途，仅作内部研判使用。"}]]},{"t":"note","lines":[[{"b":false,"v":"麦子期：谁能教我一下怎么在公司文档系统里写彩字？黑白字要给我看昏了。"}]]},{"t":"note","lines":[[{"b":false,"v":"李珀涯：反人类办公系统是这样的，不让发私信是何意味，强迫所有人用批注聊天吗？"}]]},{"t":"note","lines":[[{"b":false,"v":"麦子期：什么！原来不能发私信吗。我还以为你俩是不发消息装高冷Σ(ﾟ∀ﾟﾉ)ﾉ"}]]},{"t":"h","lines":[[{"b":false,"v":"一、基本情况"}]]},{"t":"p","lines":[[{"b":false,"v":"六月五日晚间八时许，死者自家中阳台处坠落。"}]]},{"t":"p","lines":[[{"b":false,"v":"六月五日晚间八点十分左右，警方陆续接到两起报警电话，并迅速出警。两起报警电话分别来自一楼业主和小区物业。死者坠落至一楼业主的小型庭院内，当场死亡。"}]]},{"t":"p","lines":[[{"b":false,"v":"六月二十七日，事件定性为意外事件，警方出具《不予立案通知书》。"}]]},{"t":"h","lines":[[{"b":false,"v":"二、死者基本信息"}]]},{"t":"kv","head":[[{"b":false,"v":"身份"}],[{"b":false,"v":"姓名"}],[{"b":false,"v":"年龄"}],[{"b":false,"v":"籍贯"}],[{"b":false,"v":"住址"}],[{"b":false,"v":"职业"}]],"rows":[[[{"b":false,"v":"死者"}],[{"b":false,"v":"丁凯奇"}],[{"b":false,"v":"28"}],[{"b":false,"v":"山东省宜州市召亭县"}],[{"b":false,"v":"宜州市市南区江山一品小区6号楼1单元701户"}],[{"b":false,"v":"宜州市人民检察院检察官"}]]]},{"t":"note","lines":[[{"b":false,"v":"麦子期：丁凯奇住宅目前已清空。经实地考察，阳台上方为玻璃窗，可通过推拉窗扇实现完全开放。下部约1.2米固定栏板。阳台上方有窗帘槽位，目前窗帘已被撤下，仅剩四枚窗帘钩。"}]]},{"t":"h","lines":[[{"b":false,"v":"三、调查推进方向"}]]},{"t":"p","lines":[[{"b":false,"v":"1. 死者坠楼原因不明。"}]]},{"t":"note","lines":[[{"b":false,"v":"李珀涯：法医鉴定结果显示，死者丁凯奇符合高坠致全身多发性损伤死亡，现场阳台地面未发现明显搏斗痕迹或拖拽痕迹，死者未见明显防御伤。死者胃内容物、心血、尿液中未检出酒精及常见镇静催眠药物。已排除死者因醉酒或药物作用导致意识不清而坠落的可能性。"}]]},{"t":"p","lines":[[{"b":false,"v":"2. 第一目击者身份不明。"}]]},{"t":"note","lines":[[{"b":false,"v":"李珀涯：电梯监控记录显示，六月五日下午四点左右，丁凯奇与范泽（29）同乘电梯上楼进入住宅。丁凯奇坠楼后，范泽于八点三十二分乘电梯离开丁凯奇住宅。丁凯奇净身高192CM，体重85-87KG；范泽身高约170CM，根据监控信息推测体重在50-60KG之间。结合尸体鉴定情况，暂排除暴力犯罪可能性。有关范泽个人情况，本部不愿公开事发笔录文件。"}]]},{"t":"note","lines":[[{"b":false,"v":"韩维恩：详细询问记录参考询问记录-范泽。"}]]},{"t":"p","lines":[[{"b":false,"v":"3. 死者社会关系不明。"}]]},{"t":"note","lines":[[{"b":false,"v":"李珀涯：经走访确认，丁凯奇长期独居。父母均在农村老家居住，姐姐在宜州市召亭县居住。检察院同事反映，丁极少与同事来往。另，致敬某传奇组员，不打招呼失踪三四天，问他有什么收获，他说跟女的聊八卦聊到不知天地为何物了。"}]]},{"t":"note","lines":[[{"b":false,"v":"麦子期：有一说一，男的也聊了。详见询问记录-韩彬。"}]]},{"t":"note","lines":[[{"b":false,"v":"韩维恩：@麦子期，不要再聊了……你的录音整理起来超级麻烦……我都不想写成对话式了……"}]]},{"t":"note","lines":[[{"b":false,"v":"麦子期：唉唉，职场霸凌。"}]]},{"t":"p","lines":[[{"b":false,"v":"以上。"}]]},{"t":"note","lines":[[{"b":false,"v":"文档创建者@韩维恩"}],[{"b":false,"v":"文档协作者@李珀涯@麦子期"}]]},{"t":"hr"}]},
+    {"id":"d03-hanbin","title":"询问记录-韩彬","track":"doc","order":3,"requires":[],"person":[],"think":null,"unlocks":"","unlockWhen":[],"answer":"","trigger":"","term":"","kind":"","mail":false,"news":false,"requireEarlier":false,"gate":0,"teaches":[],"learn":["八二九枪击案","召亭三中校友会","范泽","韩维恩","麦子期","李珀涯","丁凯奇","韩彬","赵烁"],"blocks":[{"t":"p","lines":[[{"b":false,"v":"转写说明：本次访谈为公开式访谈，也即被访者在完全知情的前提下接受访谈。考虑到上下文完整性及访谈可信度，本次转写保留访谈人员发言。为保证转写文档真实性，如非特殊情况，询问者不能同时担任录音转写者。"}]]},{"t":"p","lines":[[{"b":false,"v":"韩彬（被询问人员，下同）：抱歉，我两点有个会要开，只能简短聊半小时。"}]]},{"t":"p","lines":[[{"b":false,"v":"麦子期（询问人员，下同）：没事，就随便问问。顺带一提，你的证言是有法律效力的。我希望你可以对自己的证言负责。"}]]},{"t":"p","lines":[[{"b":false,"v":"韩：我明白。"}]]},{"t":"p","lines":[[{"b":false,"v":"麦：你与丁凯奇是什么关系？"}]]},{"t":"p","lines":[[{"b":false,"v":"韩：我们是召亭同乡，也是朋友。今年结婚的时候，我还请他做了伴郎。"}]]},{"t":"note","lines":[[{"b":false,"v":"韩维恩：此处询问人员认真交流了十分钟婚姻相关话题。与事件无关，已跳过转录。"}]]},{"t":"note","lines":[[{"b":false,"v":"李珀涯：@麦子期，恨嫁男是这样的。"}]]},{"t":"note","lines":[[{"b":false,"v":"麦子期：……这是快速拉近距离的小技巧。"}]]},{"t":"p","lines":[[{"b":false,"v":"韩：我跟之前来询问的警官也讲过，我不认为他会自杀。虽然他平时看着若无其事，但其实比任何人都怕死，尤其在经历过那种事之后。"}]]},{"t":"note","lines":[[{"b":false,"v":"韩维恩：@麦子期，“那种事”是什么事？询问过程中没有确认过。"}]]},{"t":"note","lines":[[{"b":false,"v":"麦子期：这不显然是八二九枪击案吗？这都不知道，你俩真是宜州本地人吗？"}]]},{"t":"note","lines":[[{"b":false,"v":"韩维恩：……我不是。"}]]},{"t":"note","lines":[[{"b":false,"v":"李珀涯：显然在哪儿？你没玩过审讯游戏吗？故意不追问的来了。"}]]},{"t":"note","lines":[[{"b":false,"v":"麦子期：没事，韩彬又跑不了，有问题再找他呗。"}]]},{"t":"p","lines":[[{"b":false,"v":"麦：除了你，丁凯奇还有没有其他关系密切的朋友？"}]]},{"t":"p","lines":[[{"b":false,"v":"韩：他在校友会聊天比较多。召亭有自己的校友会。我可以拉你进群，但群里有审核，可能潜不了太久。"}]]},{"t":"note","lines":[[{"b":false,"v":"韩维恩：对话中提到的组织信息及成员名单已建立文档，详情参见召亭三中校友会。"}]]},{"t":"p","lines":[[{"b":false,"v":"麦：行，了解了。有关丁凯奇，你还了解其他情况吗？比如他最近的工作状态或者情感关系。"}]]},{"t":"p","lines":[[{"b":false,"v":"韩：我们专业不在同领域，所以很少聊工作。恋爱方面，凯奇在苏北禾港有个女朋友，前两年凯奇会坐高铁去找她。最近好像搬到宜州来了。"}]]},{"t":"p","lines":[[{"b":false,"v":"麦：你认识她吗？"}]]},{"t":"p","lines":[[{"b":false,"v":"韩：不认识。我从没见过她。这件事是在校友圈里传开的，两年前凯奇和赵烁分手，赵烁说他出轨了禾港的新女友，两人闹得很难堪。不过凯奇人缘更好一点，所以不了了之了。"}]]},{"t":"note","lines":[[{"b":false,"v":"韩维恩：此处询问人员认真交流了四分钟感情相关话题。判定与事件无关，已跳过转录。"}]]},{"t":"p","lines":[[{"b":false,"v":"麦：……你知道范泽这个人吗？"}]]},{"t":"p","lines":[[{"b":false,"v":"韩：不太清楚。是做什么的？"}]]},{"t":"p","lines":[[{"b":false,"v":"麦：这张照片有印象吗？"}]]},{"t":"p","lines":[[{"b":false,"v":"韩：不认识。我的社交圈基本是公司和线上校友会，恐怕帮不上您的忙。还有事吗？左总给我发消息了，我马上得去会议室。"}]]},{"t":"p","lines":[[{"b":false,"v":"麦：行，那就先这样。有问题我会再找你。"}]]},{"t":"p","lines":[[{"b":false,"v":"韩：好的，再见。"}]]},{"t":"p","lines":[[{"b":false,"v":"以上。转录结束。"}]]},{"t":"note","lines":[[{"b":false,"v":"文档创建者@韩维恩"}],[{"b":false,"v":"文档协作者@李珀涯@麦子期"}]]}]},
+    {"id":"d04-829","title":"八二九枪击案","track":"doc","order":4,"requires":[],"person":[],"think":null,"unlocks":"","unlockWhen":[],"answer":"","trigger":"","term":"","kind":"","mail":false,"news":false,"requireEarlier":false,"gate":0,"teaches":[],"learn":["宜州特大连环杀人案","杨天一","许应杰","韩维恩","麦子期","丁凯奇"],"blocks":[{"t":"h","lines":[[{"b":false,"v":"案件通报"}]]},{"t":"p","lines":[[{"b":false,"v":"关于我局刑警大队许应杰同志不幸牺牲的通报"}]]},{"t":"p","lines":[[{"b":false,"v":"□□□□年8月29日，我局刑警大队中队长许应杰同志在执行任务过程中，遭遇犯罪嫌疑人开枪拒捕，不幸中弹牺牲，年仅31岁。目前，涉案犯罪嫌疑人正在全力追捕中，案件侦办工作正在进行。"}]]},{"t":"note","lines":[[{"b":false,"v":"麦子期：@韩维恩，这案子你都不知道？"}]]},{"t":"note","lines":[[{"b":false,"v":"韩维恩：不知道。两年前我还在禾港上学。"}]]},{"t":"note","lines":[[{"b":false,"v":"麦子期：你竟然是禾港人？不是都说禾港人长得高嘛。"}]]},{"t":"note","lines":[[{"b":false,"v":"韩维恩：我是苏南宣阳人。只是在禾港读大学。……不要再说我的身高了！"}]]},{"t":"h","lines":[[{"b":false,"v":"相关报道"}]]},{"t":"p","lines":[[{"b":false,"v":"宜州日报讯"}]]},{"t":"p","lines":[[{"b":false,"v":"宜州市公安局刑侦支队队员许应杰，在近日追查宜州特大连环杀人案的过程中，于宜州市市北区西关街道被服厂内遭枪击，经送医全力抢救无效，不幸因公殉职，年仅31岁。案件侦办工作仍在进行中。"}]]},{"t":"p","lines":[[{"b":false,"v":"据市公安局通报，案发当日上午，嫌疑人杨天一在西关街道被服厂附近被许应杰追捕截停。杨天一持枪拒捕，与许应杰发生交火。许应杰在交火中身中数弹，当场牺牲。杨天一子弹打空后弃枪驱车逃离现场，现场遗留的自制手枪及制式警枪各一支，经初步比对，与涉案弹壳吻合。"}]]},{"t":"p","lines":[[{"b":false,"v":"公开履历显示，许应杰同志从警近十年，长期奋战在刑侦一线，曾参与侦破多起大要案件，是宜州公安刑侦战线的骨干力量。案发前数日，他仍带队围绕杨天一团伙的行动路线开展外围排查，连续多日未回家中。"}]]},{"t":"p","lines":[[{"b":false,"v":"案发后，省公安厅及市委、市政府有关领导分别作出批示，要求全力做好善后抚恤工作，并彻查涉案枪弹来源及杨天一团伙的关系网。市公安局已成立善后工作组，协助家属处理相关事宜。截至发稿，案件仍在进一步深挖中。"}]]},{"t":"p","lines":[[{"b":false,"v":"许应杰同志牺牲的消息传开后，其生前战友、辖区群众自发前往殡仪馆吊唁。许应杰生前好友、宜州市检察院检察官丁凯奇案发时正在现场，亲眼目睹许应杰中弹牺牲，其本人也中弹负伤。在接受采访时，丁凯奇表示，希望案件早日查清，涉案枪弹来源及关系网依法彻查，给许应杰和家属一个交代。"}]]},{"t":"note","lines":[[{"b":false,"v":"韩维恩：本部没有问到更多消息。似乎案件已经封存。"}]]},{"t":"note","lines":[[{"b":false,"v":"麦子期：正常。当初刑警大队的老人都不想查这种老案子，许应杰抽调不到人手，才把检察院的丁凯奇也叫上了。不过这两年杨天一也没动静，估计是逃到外地了。"}]]},{"t":"p","lines":[[{"b":false,"v":"以上。"}]]},{"t":"note","lines":[[{"b":false,"v":"文档创建者@韩维恩"}],[{"b":false,"v":"文档协作者@麦子期"}]]}]},
+    {"id":"d05-xiaoyouhui","title":"召亭三中校友会","track":"doc","order":5,"requires":[],"person":[],"think":null,"unlocks":"","unlockWhen":[],"answer":"","trigger":"","term":"","kind":"","mail":false,"news":false,"requireEarlier":false,"gate":0,"teaches":["询问记录-张昊阳","询问记录-陈静雨","询问记录-赵烁"],"learn":["询问记录-张昊阳","询问记录-陈静雨","询问记录-赵烁","麦子期","陈静雨","韩彬","张昊阳","赵烁"],"blocks":[{"t":"p","lines":[[{"b":false,"v":"宜州的召亭三中校友会主要以微信群组的形式存在，以毕业于召亭三中、现于宜州地区工作生活的校友为主体。该校友会实行邀请制入群，被邀请入群人员须登记本人高中毕业届数、班级及当前工作单位，并由群组管理员进行核实确认。"}]]},{"t":"p","lines":[[{"b":false,"v":"统计群组近半年来各人员发言频率，结合韩彬所给出的群组名单（有关韩彬本人访谈内容，参见对应访谈记录），对照可得出群组核心活跃人员。为提高调查精度，本次筛选仅保留了与死者有直接关系的毕业生，共有三人。在之后的工作中，应当对三人进行逐一询问。"}]]},{"t":"p","lines":[[{"b":false,"v":"1. 张昊阳（死者高中同班同学兼宿舍舍友）"}]]},{"t":"p","lines":[[{"b":false,"v":"2. 陈静雨（死者高中同班同学）"}]]},{"t":"p","lines":[[{"b":false,"v":"3. 赵烁（死者前女友）"}]]},{"t":"p","lines":[[{"b":false,"v":"以上。"}]]},{"t":"note","lines":[[{"b":false,"v":"文档创建者@麦子期"}]]}]},
+    {"id":"d06-zhanghaoyang","title":"询问记录-张昊阳","track":"doc","order":6,"requires":[],"person":[],"think":null,"unlocks":"","unlockWhen":[],"answer":"","trigger":"","term":"","kind":"","mail":false,"news":false,"requireEarlier":false,"gate":0,"teaches":[],"learn":["八二九枪击案","杨天一","许应杰","范泽","韩维恩","陈静雨","韩彬","旭凌集团","赵烁"],"blocks":[{"t":"p","lines":[[{"b":false,"v":"警察不是问过了吗？"}]]},{"t":"p","lines":[[{"b":false,"v":"你也是警察？所以他确实是被人杀了？"}]]},{"t":"p","lines":[[{"b":false,"v":"我？我和他算是兄弟吧。从高中就一起混了。本科和读研的时候联系比较少，近几年都回宜州工作，就重新熟络了。韩哥，就是旭凌集团的韩彬，也跟我们一起的。"}]]},{"t":"p","lines":[[{"b":false,"v":"凯奇这人挺有韧劲的。我不觉得他会自杀。而且凯奇是个很有生活的人。你知道什么叫有生活吗？就是有爱好、有热情、有抱负，懂我意思吗？真正的理想主义者都是追求正义的。我跟韩哥就不行，韩哥是干医药的，我是干通信的，我们俩都不跟活人打交道。凯奇接触活人才多呢，天天给我们讲法庭段子。人就是得多跟活人打交道，才能有人味儿。人味儿重就不会被鬼勾。"}]]},{"t":"p","lines":[[{"b":false,"v":"对，我之前跟警察就是这么说的。那天他特意调休一天，跟女友出去玩了。这种人怎么会自杀呢。他女朋友我倒是没见过，但我知道她原来住禾港。凯奇前年跟赵烁分手就是因为她，凯奇总去禾港找她，被赵烁发现了。"}]]},{"t":"p","lines":[[{"b":false,"v":"那我肯定是无条件站在凯奇这一边。主要赵烁讲得太离谱了，那阵子不是八二九枪击案嘛，赵烁在群里说凯奇和那女的合伙把许应杰杀了，然后又嫁祸给杨天一。你问她，她又没有证据，就一个劲儿地重复，说话也颠三倒四的。群友都说她精神出问题了。"}]]},{"t":"p","lines":[[{"b":false,"v":"得了吧。我没那么相信凯奇的人品，这小子恋爱方面可坏了。他出轨也不是一回两回了。大学的时候跟陈静雨异地，第一年就出轨跟陈静雨分了，来宜州检察院之后遇到赵烁，立马跟本硕期间的女友分了。本来赵烁说他出轨，我们都想替赵烁说话的，结果赵烁直接说凯奇是杀人犯，那不好意思，我只能跟兄弟一条心了。"}]]},{"t":"p","lines":[[{"b":false,"v":"范泽？没听说过。照片还挺好看的。她是召亭人？我几百年没回过召亭了。"}]]},{"t":"p","lines":[[{"b":false,"v":"不麻烦不麻烦，你不来问话，我怎么光明正大请假呀？正好从这门出去直奔网吧了。下回有什么想问的再找我。行，那先这样。"}]]},{"t":"note","lines":[[{"b":false,"v":"文档创建者@韩维恩"}]]}]},
+    {"id":"d07-811","title":"宜州特大连环杀人案","track":"doc","order":7,"requires":[],"person":[],"think":null,"unlocks":"","unlockWhen":[],"answer":"","trigger":"","term":"","kind":"","mail":false,"news":false,"requireEarlier":false,"gate":0,"teaches":[],"learn":["李小小","李光辉","杨天一","韩维恩","江云","李胜利"],"blocks":[{"t":"h","lines":[[{"b":false,"v":"案情简述"}]]},{"t":"p","lines":[[{"b":false,"v":"宜州特大连环杀人案（又称召亭811系列连环案）是指发生在山东省宜州市和江苏省禾港市两地的系列恶性案件，犯罪嫌疑人通过尾随或入室等方式实施随机犯罪，受害人有男有女，犯罪特点为：犯人往往将死者眼珠剖出并破坏其面部特征，随后从死者眼眶向颅中塞入数枚石子。"}]]},{"t":"p","lines":[[{"b":false,"v":"以辛家埠杀人案为典型，受害人魏某双眼被挖空并塞入石子，颈部被切开，胸腹被剖开并挖空内脏，下体赤裸，阴部遭严重破坏。截至目前，系列案件共致九名被害者死亡，受害者年龄最小17岁。案件受害者最早可追溯至二十四年前，凶手迄今仍逍遥法外。"}]]},{"t":"h","lines":[[{"b":false,"v":"关联案件"}]]},{"t":"p","lines":[[{"b":false,"v":"本案关联案件为召亭县李胜利案。"}]]},{"t":"p","lines":[[{"b":false,"v":"距今二十年前，杨天一已累计犯下四起案件。由于上级要求必须在规定期限内“办成铁案”，召亭警方仅根据足迹鉴定结果，就强行逮捕了29岁的青年工人李胜利，并利用刑讯逼供、威胁家人等方式强迫其认罪认罚。在被关押审讯五个月后，李胜利承认犯罪事实。在其亲友及辩护律师的努力下，案件一审宣判无罪。然而，李胜利在一审后仍被超期羁押在看守所。"}]]},{"t":"p","lines":[[{"b":false,"v":"次年九月，召亭县辛家埠发生恶性杀人案，经研究认为，该案与前几起案件高度相似，应合并入召亭811系列连环杀人案。十月，李胜利案在山东省宜州市中级人民法院召开二审，李胜利被当庭无罪释放。此时李胜利已在看守所羁押长达十七个月。有充分证据证明，李胜利曾在看守所内受到严重的不公正对待。年末，李胜利因肺炎去世，留下妻子江云和年幼的女儿（李小小）和儿子（李光辉）。"}]]},{"t":"p","lines":[[{"b":false,"v":"在召亭县，李胜利案的影响力远大于连环杀人案本身。该案件导致了召亭县严重的警民对立，当地治安环境也迅速恶化。警方公信力丧失导致民间出现大量帮派团体，这些团体多由社会闲散人员组成。时至今日，召亭县仍然位列山东省经济贫困县。"}]]},{"t":"p","lines":[[{"b":false,"v":"以上。"}]]},{"t":"note","lines":[[{"b":false,"v":"文档创建人@韩维恩"}]]}]},
+    {"id":"d08-fanze","title":"询问记录-范泽","track":"doc","order":8,"requires":[],"person":[],"think":null,"unlocks":"","unlockWhen":[],"answer":"","trigger":"","term":"","kind":"","mail":false,"news":false,"requireEarlier":true,"gate":0,"teaches":[],"learn":["阶段性事件报告","范泽","韩维恩","麦子期"],"blocks":[{"t":"p","lines":[[{"b":false,"v":"目前仍无法与范泽进行联系。"}]]},{"t":"p","lines":[[{"b":false,"v":"范泽户籍电话为空号，无法联系亲属。"}]]},{"t":"p","lines":[[{"b":false,"v":"范泽户籍地址在宜州市召亭县辛家埠198号，已计划前往走访。"}]]},{"t":"p","lines":[[{"b":false,"v":"宜州方面，范泽的房东表示其通过线上软件签订房屋租赁合同，房租半年一付，合同一年一续。两年来房东从未与范泽有过任何线下接触，且房东无法辨认范泽的相貌。除此之外，房东并未提供任何有效信息。由于其访谈记录价值较低，文档并未收录进本系统，今后如有类似情况、也不再收录。"}]]},{"t":"note","lines":[[{"b":false,"v":"韩维恩：文档内容更新。在先前的工作中，麦子期曾试图与范泽会面并进行询问。然而，由于不明原因，麦子期至今并没有提供录音文件，暂无法进行转录。"}]]},{"t":"p","lines":[[{"b":false,"v":"本文档暂用于占位，在得到新的询问记录后将进行内容补充。"}]]},{"t":"p","lines":[[{"b":false,"v":"在范泽缺席的情况下，本事件阶段性报告请参考阶段性事件报告。"}]]},{"t":"note","lines":[[{"b":false,"v":"文档创建者@韩维恩"}]]}]},
+    {"id":"d09-report","title":"阶段性事件报告","track":"doc","order":9,"requires":[],"person":[],"think":null,"unlocks":"","unlockWhen":[],"answer":"","trigger":"","term":"","kind":"","mail":false,"news":false,"requireEarlier":false,"gate":0,"teaches":[],"learn":["麦子期离队报告","范泽","韩维恩","麦子期","丁凯奇","南堤口杀人埋尸案","赵烁"],"blocks":[{"t":"h","lines":[[{"b":false,"v":"调查目的"}]]},{"t":"p","lines":[[{"b":false,"v":"本调查旨在排除丁凯奇被害可能。调查过程中，小组意外发现南堤口杀人埋尸案，有关此案的相关分析，已写于麦子期离队报告，在此不做赘述。"}]]},{"t":"h","lines":[[{"b":false,"v":"线索整理"}]]},{"t":"p","lines":[[{"b":false,"v":"首先，应当确定范泽的身份。"}]]},{"t":"p","lines":[[{"b":false,"v":"在之前的调查中发现，范泽户籍地址为宜州市召亭县辛家埠198号，但户籍电话为空号。经走访后得知该地址多年无人居住。考虑到辛家埠情况特殊，在对居民进行询问后，确认其为辛家埠杀人案发生地，范泽系被害人魏某的女儿，在母亲魏某遇害后，范泽被舅舅带到禾港居住，此后辛家埠198号长期空置。两年前，范泽搬至宜州与房东线上签订租房合同，此后在市北区某奶茶店打零工。"}]]},{"t":"p","lines":[[{"b":false,"v":"其次，应当确认范泽与丁凯奇的关系。"}]]},{"t":"p","lines":[[{"b":false,"v":"死者朋友的口供互相印证，范泽与丁凯奇在两年前关系逐渐密切。在这之后，范泽搬到了宜州。根据警局提供的事件笔录，范泽本人供述，其与丁凯奇系暧昧关系。调查过程中发现，除赵烁本人发表的言论（暂无法证实），丁凯奇身边没有任何人见过范泽，即使范泽在宜州居住近两年。丁凯奇地铁通勤记录显示，范泽在宜州期间，丁凯奇从未前往其居住地附近。面对询问，范泽也无法给出任何证明二人暧昧的证据，比如合照或聊天记录。"}]]},{"t":"p","lines":[[{"b":false,"v":"综上，暂不认为其与丁凯奇存在暧昧关系，范泽本人供述并不完全属实。"}]]},{"t":"p","lines":[[{"b":false,"v":"其三，丁凯奇坠楼时的详细情形。"}]]},{"t":"p","lines":[[{"b":false,"v":"线上聊天记录证明，事发当日，丁凯奇约范泽前往其住宅，没有说明原因。范泽供述，二人在客厅交谈，随后范泽前往浴室洗澡，丁凯奇在此期间坠楼。"}]]},{"t":"p","lines":[[{"b":false,"v":"通过丁凯奇住宅电费明细，结合简单的数学计算可以推断，当晚并没有使用热水器。出警人员回忆，浴室玻璃是干净的，地面没有水渍。电梯监控记录显示，范泽进入和离开现场前后发型均为高马尾，刘海形状无明显变化，而丁凯奇系短发，住宅中未见吹风机或类似产品。换言之，在丁凯奇坠楼时，范泽目击可能性极高。"}]]},{"t":"p","lines":[[{"b":false,"v":"丁凯奇对面楼栋的业主反应，当晚并未注意到丁凯奇住宅的动向，因为其阳台窗帘是关闭状态，无法看清屋内情况。换言之，在丁凯奇坠楼前，室内窗帘关闭且窗户打开，随后丁凯奇直接跌出窗外。由于窗帘的摩擦力较小，丁凯奇隔着窗帘布料难以抓住窗沿，无法自救而跌落，并在右手指节留下摩擦痕迹。由此可排除丁凯奇的自杀可能性。"}]]},{"t":"p","lines":[[{"b":false,"v":"上条中提到的窗帘，在实地考察后发现，已经与家具一同被丁凯奇家人搬走。然而，窗帘槽上留下了四个窗帘钩，鉴定发现丁凯奇指纹。在走访丁凯奇家人后，确定是因为窗帘部分勾孔损坏，无法与窗帘钩匹配，所以将四个窗帘钩留在宅内。根据窗帘形态分析，损坏因长期磨损导致。"}]]},{"t":"h","lines":[[{"b":false,"v":"调查结论"}]]},{"t":"p","lines":[[{"b":false,"v":"本着疑罪从无的原则，本人暂不认为范泽有杀人嫌疑，仅作可以简单推断：在室内窗帘关闭的状态下，死者为检查窗帘钩站上高处，在此期间窗户被悄悄打开——或在此之前已经打开——丁凯奇被推下阳台。考虑到丁凯奇的身高（重心较高），仅需极小外部力量即可导致坠落，排除体型差影响。"}]]},{"t":"p","lines":[[{"b":false,"v":"以上。"}]]},{"t":"note","lines":[[{"b":false,"v":"文档创建者@韩维恩"}]]}]},
+    {"id":"d10-maiziqi","title":"麦子期离队报告","track":"doc","order":10,"requires":[],"person":[],"think":null,"unlocks":"","unlockWhen":[],"answer":"","trigger":"","term":"","kind":"","mail":false,"news":false,"requireEarlier":false,"gate":0,"teaches":[],"learn":["宜州特大连环杀人案","未命名录音","李光辉","杨天一","许应杰","韩维恩","麦子期","丁凯奇","南堤口杀人埋尸案"],"blocks":[{"t":"h","lines":[[{"b":false,"v":"报告简述"}]]},{"t":"p","lines":[[{"b":false,"v":"本报告旨在汇报麦子期失联情况，并简要整理南堤口杀人埋尸案相关信息。本人与麦子期最后通话发生于八月二十九日上午，以下为通话录音转写记录。"}]]},{"t":"h","lines":[[{"b":false,"v":"通话录音"}]]},{"t":"p","lines":[[{"b":false,"v":"通话人1：小维，你现在听我说……我发给你一段录音和李光辉的照片，你好好保存。是这个李光辉杀了杨天一，埋尸在南堤口。你尽量要争取到警察本部的支持……"}]]},{"t":"note","lines":[[{"b":false,"v":"此处语音模糊。"}]]},{"t":"p","lines":[[{"b":false,"v":"通话人2：您现在在哪儿？您受伤了？我马上开车去接您。"}]]},{"t":"p","lines":[[{"b":false,"v":"通话人1：李……。"}]]},{"t":"note","lines":[[{"b":false,"v":"麦子期一方挂断电话。通话结束。"}],[{"b":false,"v":"对话中提到的录音文件已留档，详见未命名录音。"}]]},{"t":"h","lines":[[{"b":false,"v":"南堤口杀人埋尸案"}]]},{"t":"p","lines":[[{"b":false,"v":"经信息检索可知，麦子期所提到的南堤口杀人埋尸案，系宜州特大连环杀人案的组成部分。"}]]},{"t":"p","lines":[[{"b":false,"v":"约两年前，在南堤口地段公路施工过程中，挖出一具男性尸体。死者年龄在45岁左右，身份无法辨认，躯体存在锐器刺伤痕迹，尸体颅骨被严重破坏并塞入石子，符合杨天一作案习惯，结合其他特征，并入系列案件。"}]]},{"t":"p","lines":[[{"b":false,"v":"追查此案过程中，刑警许应杰中枪身亡。负伤的丁凯奇提供了嫌疑人的外貌特征和口音习惯等信息，警方据此在宜州全市展开大范围排查，结合行踪轨迹，最终锁定召亭县小洼村居民杨天一，这是警方多年来第一次确认嫌疑人身份，系列案件此后也被称为杨天一案。"}]]},{"t":"p","lines":[[{"b":false,"v":"附件内容已转录，详见未命名录音。"}]]},{"t":"note","lines":[[{"b":false,"v":"附件：未命名录音.mp3"}]]},{"t":"p","lines":[[{"b":false,"v":"以上。"}]]},{"t":"note","lines":[[{"b":false,"v":"文档创建者@韩维恩"}]]}]},
+    {"id":"d11-recording","title":"未命名录音","track":"doc","order":11,"requires":[],"person":[],"think":null,"unlocks":"","unlockWhen":[],"answer":"","trigger":"","term":"","kind":"","mail":false,"news":false,"requireEarlier":false,"gate":0,"teaches":[],"learn":["韩维恩","李胜利"],"blocks":[{"t":"p","lines":[[{"b":false,"v":"转写说明：本文档系软件自动转写生成，未经校对。 后续文档整理过程中需二次校对。录音经过多次处理，无法识别音色特征，暂使用编号区分说话人。录音原件已上传附件。"}]]},{"t":"note","lines":[[{"b":false,"v":"以下为正文。"}]]},{"t":"p","lines":[[{"b":false,"v":"①：……那时候小龙给我打电话嘛，说有三个小孩来，我就去找他们。领头的是半长头发的小小子，叫雪莲的，邪得厉害，戌狗和小四眼都听他的。他一上来就掏刀子问我西关的案子，让我去自首，要不然就把我弄死。那我肯定不能说自首嘛，我当时也是杀了四五个人了。然后我套他话，就哄着小孩嘛，才知道是大队里急着破案，把我杀的人给李胜利顶包了。那我一想，雪莲也是街上孩子，他自己手上犯过事，不敢去找警察。我就跟他好商好量，他说让我再到外面杀两个人，还是把眼睛挖了，这样警察知道人抓错了，李胜利就放出来。我说那也行，就带他们四个去新加坡蹲着等人。晚上的时候有纺织厂下班的，就看着机会把一个女的抓到林里捅死了。"}]]},{"t":"p","lines":[[{"b":false,"v":"②：谁做的？"}]]},{"t":"p","lines":[[{"b":false,"v":"①：杀人主要是我。雪莲是小小子嘛，他去跟人搭话，女的不害怕。她一过来我就把她抓住，雪莲出去望风了。我把人拽到坡下面捅了几刀。"}]]},{"t":"p","lines":[[{"b":false,"v":"②：为什么要把内脏挖空？"}]]},{"t":"p","lines":[[{"b":false,"v":"①：就那个女的，刚开始一直叫嘛。她一叫，四眼就上劲儿了，脱裤子想搞她，她淌血淌得快不行了，由着他搞。雪莲过来把四眼训了一顿，说警察能验出来。我就拾了两根木枝子，把下面弄烂了，雪莲觉得还不保险，把肚子也挖开了，脏器下水拿衣裳兜起来扔在河里了。"}]]},{"t":"p","lines":[[{"b":false,"v":"③：雪莲也动手了？"}]]},{"t":"p","lines":[[{"b":false,"v":"①：后面都是他动手。小小子自己有刀，把尸首脖子割了，头也砸烂了。"}]]},{"t":"p","lines":[[{"b":false,"v":"②：其他两个人呢？"}]]},{"t":"p","lines":[[{"b":false,"v":"①：雪莲回来，就换戌狗去望风了。小四眼不敢做事的，再说雪莲一直跟他发火，说是被抓了第一个弄死他，小四眼就不说话了。之后就把尸首弄了嘛。塞石头进眼眶里，就跟以前那样。弄完丢在林子里。我们几个就跳河跑了，顺着河往南游，从南堤口水闸那边上岸了。戌狗给我抢了辆摩托车，还给我八十块钱。我就骑车到禾港去躲着了。"}]]},{"t":"p","lines":[[{"b":false,"v":"②：那你怎么又回来了？"}]]},{"t":"p","lines":[[{"b":false,"v":"①：这几年戌狗有钱了嘛。我回来找他做事。他现在是大老板……"}]]},{"t":"note","lines":[[{"b":false,"v":"录音在此中断。"}]]},{"t":"note","lines":[[{"b":false,"v":"文档创建者@韩维恩"}]]}]},
+    {"id":"d12-chenjingyu","title":"询问记录-陈静雨","track":"doc","order":12,"requires":[],"person":[],"think":null,"unlocks":"","unlockWhen":[],"answer":"","trigger":"","term":"","kind":"","mail":false,"news":false,"requireEarlier":false,"gate":0,"teaches":[],"learn":["范泽","韩维恩"],"blocks":[{"t":"p","lines":[[{"b":false,"v":"什么呀？您是要问凯奇的案子吗？我跟凯奇现在不怎么联系了。他念大学之后我们就分手了，异地真的很难熬的。就算您问我，我也只能记起一点高中的事……那时他真的超级帅。因为我们学校管得很严嘛，男生都是寸头。你知道吗，我自从学美发才知道，寸头也有很多种的。但是凯奇就算寸头也很帅，而且个子高，台球打得好，学习也不错，那时候很多人追他。"}]]},{"t":"p","lines":[[{"b":false,"v":"其实他本来不想学法的，他想考警校，然后回召亭县当警察。他爸妈都是农村干瓦匠的，所以特别想让他当警察，这样他们家就不受欺负了。你不知道，召亭警察很威风的，说抓谁就抓谁。没错！就是西厂锦衣卫嘛，哈哈。但是凯奇高中打架太厉害，西中的人来找茬，他把人家的脸都扎穿了，缝了七八针，还进了派出所。警校后来没录他，他就去学法了。"}]]},{"t":"p","lines":[[{"b":false,"v":"为什么打架？好像是跟班上的社会哥有矛盾，然后社会哥找了西中的人来揍他。我也不知道。对男生之间的关系不是很关注。"}]]},{"t":"p","lines":[[{"b":false,"v":"我前年才知道他当上检察官了，当时还奇怪呢，按理说他应该考不了公务员的。可能是现在政策变了？我也不懂。反正我觉得他挺聪明的，能考上也正常。使命感？肯定不是什么使命感啦，凯奇相当务实的，不会讲那些空话。考检察官肯定是为了铁饭碗啊，什么年代了还讲正义啊。"}]]},{"t":"p","lines":[[{"b":false,"v":"范泽？不太记得了。是女生吗？召亭人？好像……没印象。跟我同届也不一定认识啦。你应该能懂吧，高中女生都有自己的小圈子。对对对，阴湿小团体。我们也没那么坏啦，不过真有贱人找事，我们也不会怕的哈。不同圈子很难认识的。反正我不认识叫范泽的。"}]]},{"t":"p","lines":[[{"b":false,"v":"照片长得也挺一般。什么，她和凯奇谈了？那怎么可能啊？凯奇不会喜欢这种类型的。不过网恋还真有可能。这种女人就是得网恋才能骗到人，见面就死定了啦。好像有点印象了。高中的时候我和凯奇早恋，后来被人举报了，把我们俩抓到升旗仪式上当典型。说不定就是她。哎呀，当年就该好好教训她。"}]]},{"t":"p","lines":[[{"b":false,"v":"什么啊，没有霸凌啦。一般我们讨厌谁的话，就不跟他打交道嘛。这个范泽一看就是那种，那种大家都不想跟她搭话的人。不搭话才是对所有人都好。你知道有些人就是很矫情的，我高中还有人因为说话没人理就跳楼了呢。"}]]},{"t":"p","lines":[[{"b":false,"v":"关于事件的想法？没什么想法。都说我近几年没跟他联系了。他来宜州当检察官都是别人告诉我的。感觉挺可惜的吧，要是他活着，我说不定还会再追他。开玩笑的，他就是个人渣，死了活该。可惜了那张脸，要是长在别人身上就好了。"}]]},{"t":"p","lines":[[{"b":false,"v":"不好意思，我马上有顾客要做烫染，可以先到这里吗？感谢啦。"}]]},{"t":"note","lines":[[{"b":false,"v":"文档创建者@韩维恩"}]]}]},
+    {"id":"d13-zhaoshuo","title":"询问记录-赵烁","track":"doc","order":13,"requires":[],"person":[],"think":null,"unlocks":"","unlockWhen":[],"answer":"","trigger":"","term":"","kind":"","mail":false,"news":false,"requireEarlier":false,"gate":0,"teaches":[],"learn":["韩维恩","李珀涯"],"blocks":[{"t":"p","lines":[[{"b":false,"v":"由于其访谈记录价值较低，文档并未收录进本系统。"}]]},{"t":"note","lines":[[{"b":false,"v":"韩维恩：@李珀涯，录音呢？我留档一下。"}],[{"b":false,"v":"李珀涯：没什么好录的，都是套话。这女的精神有问题。"}]]},{"t":"note","lines":[[{"b":false,"v":"文档创建者@李珀涯"}],[{"b":false,"v":"文档协作者@韩维恩"}]]}]},
+    {"id":"d14-jiasimo","title":"伽西莫夫碎碎念","track":"doc","order":14,"requires":["m10-xianxi"],"person":[],"think":null,"unlocks":"","unlockWhen":[],"answer":"","trigger":"","term":"","kind":"","mail":false,"news":false,"requireEarlier":false,"gate":0,"teaches":[],"learn":["陈静雨","丁凯奇","韩彬","伽西莫夫","张昊阳"],"blocks":[{"t":"p","lines":[[{"b":false,"v":"您好，我是伽西莫夫。"}]]},{"t":"p","lines":[[{"b":false,"v":"感谢您游玩不成熟的拙作。"}]]},{"t":"p","lines":[[{"b":false,"v":"本作风格灵感来自type help。比起美丽繁杂的事物，我尤其喜欢type help的简约，也因为自己完全没有精力制图，因此决定将整个故事以检索文本的方式呈现，尽最大可能贯彻了【玩法也是故事的一部分】的微妙原则。可惜本人能力有限，游戏似乎变成了视觉小说……？虽然写起来确实蛮爽就是了。"}]]},{"t":"p","lines":[[{"b":false,"v":"其剧情部分角色来自于本人的旧作《县高往事》，韩彬、丁凯奇、张昊阳、陈静雨等人的基础设定与原作完全相同，只是在原作基础上延续了【如果他们长大后】的故事。整个故事来源于一个简单的想法：【丁凯奇死了】。怀着这样的想法，经过多重版本迭代，诞生了现在的冗杂剧情，甚至游戏外的角色设定已经比游戏内文本更长了。不过，我个人的艺术审美为【少即是多】，因此游戏内不会出现太多无关设定。如果出现了……抱歉，这是我的处子作，请原谅我吧！"}]]},{"t":"p","lines":[[{"b":false,"v":"始动篇有很多未填补的谜团。毕竟故事完全是主角的单一视角，无法面面俱到地窥知一切。其中也有本人偷懒的要素，所以结局篇给出了一组（主角无法知晓的）特殊对话，算是献给玩家的通关奖励。有关未解密的内容，敬请期待续作《请键入指令：旭日凌空》。"}]]},{"t":"p","lines":[[{"b":false,"v":"最后，再次感谢您游玩拙作，这是我的第一部游戏作品，本作也帮助我积累了许多游戏开发的经验。希望续作会做得更好。大概吧。"}]]},{"t":"note","lines":[[{"b":false,"v":"附XHS账号：@i-Quasimodo"}],[{"b":false,"v":"附联系邮箱：bottle521258@163.com"}],[{"b":false,"v":"网页有任何bug请及时联系。由于现实工作繁忙，邮箱可能回复不及时，请尽量使用xhs联系。"}]]}]},
+    {"id":"m10-xianxi","title":"终于嫌隙","track":"end","order":10,"requires":["d00-news","d01-mail","d02-dingkaiqi","d03-hanbin","d04-829","d05-xiaoyouhui","d06-zhanghaoyang","d07-811","d08-fanze","d09-report","d10-maiziqi","d11-recording","d12-chenjingyu","d13-zhaoshuo","m00-xuwu","m01-shengconghelai","m02-guanghui","m03-chuanqi","m04-xuyu","m05-hongyan","m06-youxia","m07-shenxun","m08-bielai","m09-zitouluowang"],"person":["李珀涯"],"think":null,"unlocks":"","unlockWhen":[],"answer":"李珀涯","trigger":"","term":"","kind":"","mail":false,"news":false,"requireEarlier":false,"gate":0,"teaches":[],"learn":["伽西莫夫碎碎念","李光辉","左旭升","薛怜","江恒生","杨天一","许应杰","范泽","韩维恩","麦子期","李珀涯","丁凯奇","韩彬","伽西莫夫","李胜利","旭凌集团"],"blocks":[{"t":"p","lines":[[{"b":false,"v":"“我当初就不该杀杨天一。走正式程序逮捕他就好了……不管他说什么都无所谓，只要把他枪毙就好。都是这个韩彬非要节外生枝！兜兜转转一大圈，不该死的人都死了！”"}]]},{"t":"p","lines":[[{"b":false,"v":"“小韩，你也参与了？”"}]]},{"t":"p","lines":[[{"b":false,"v":"“旭总，我并没有参与执行……我只是建议让杨天一暂时消失。”"}]]},{"t":"p","lines":[[{"b":false,"v":"“建议？光辉年纪小，他当成命令怎么办？一会儿回公司，你看我怎么教训你！”"}]]},{"t":"p","lines":[[{"b":false,"v":"“抱歉，旭总。”"}]]},{"t":"p","lines":[[{"b":false,"v":"“珀涯，你先别生气，我回去替你狠狠骂他。你告诉我，到底是怎么回事？从杨天一的事开始讲。慢慢来，累了就先歇一会。”"}]]},{"t":"p","lines":[[{"b":false,"v":"“小叔你放心，我现在全都想起来了。这件事最早是四年前，杨天一回宜州打听你的消息，还往你公司里打电话，被韩彬接到了。姓杨的知道你现在有钱，想拿当年的事勒索你，说他手里有证据。韩彬让光辉把他打发走，光辉以为是要杀了他，他不敢动手，把这事告诉我和丁凯奇，我们三个就把他约到南堤口，搞明白情况后，我俩就把他捅死了。”"}]]},{"t":"p","lines":[[{"b":false,"v":"“你俩？”"}]]},{"t":"p","lines":[[{"b":false,"v":"“我和丁凯奇。光辉不敢的，他就是帮着把人埋了。”"}]]},{"t":"p","lines":[[{"b":false,"v":"“小韩！这种事你让光辉去办？”"}]]},{"t":"p","lines":[[{"b":false,"v":"“抱歉，旭总。是光辉他——不，是我考虑不周。”"}]]},{"t":"p","lines":[[{"b":false,"v":"“……你等着吧。珀涯，那录音是怎么回事？”"}]]},{"t":"p","lines":[[{"b":false,"v":"“录音是丁凯奇搞的，他说要发给薛检。我一想也正常，薛检毕竟是他的直属上级，也是我们自己人，丁凯奇肯定要跟他报备。他发完我就盯着他删了，连云端记录都检查过了。肯定是他偷偷搞了备份，私下传给了范泽。这个贱人！活该他死了！”"}]]},{"t":"p","lines":[[{"b":false,"v":"“然后呢？”"}]]},{"t":"p","lines":[[{"b":false,"v":"“然后过了两年，尸体被挖出来了。警局都不想查这个案子，先并到杨天一的案子里去了。许应杰不知哪里得到了证据，认定了死掉的杨天一，还想往光辉身上查。当时监视他的是凯奇，知道他去过两次禾港，跟江恒生也见过。”"}]]},{"t":"p","lines":[[{"b":false,"v":"“小韩——”"}]]},{"t":"p","lines":[[{"b":false,"v":"“旭总，得到珀涯出事的消息后，我马上把江恒生控制住了。具体情况还在审。范泽的尸体几天前在河里被发现，结合检察院之前有意向对范泽提起谋杀指控，警方目前倾向于畏罪自杀。”"}]]},{"t":"p","lines":[[{"b":false,"v":"“好。珀涯，你继续说。”"}]]},{"t":"p","lines":[[{"b":false,"v":"“他一回宜州就开始找光辉，光辉就找我帮忙。前几次是丁凯奇通风报信，一直没和许应杰打照面。警局这边我也尽量把他的线索先压住。但他毕竟级别比我高。虽然许应杰在警局人缘不好，可要是他私下汇报就糟了。我就弄了把枪，等他顺着监控找到被服厂，在厂里几枪给他打死了。后面的事你也知道，有丁凯奇作证，案子推到杨天一身上了。你都不知道，为杀许应杰，丁凯奇跟我俩生了好大的气。”"}]]},{"t":"p","lines":[[{"b":false,"v":"“生气？”"}]]},{"t":"p","lines":[[{"b":false,"v":"“旭总，许应杰是丁凯奇的……朋友。凯奇毕竟是年轻，对朋友看得很重。我已经开导过他了，凯奇也对此表示理解。他绝不会因为许应杰叛变的。”"}]]},{"t":"p","lines":[[{"b":false,"v":"“这次呢？”"}]]},{"t":"p","lines":[[{"b":false,"v":"“还不是为了丁凯奇的案子！虽说没立案，但好像是检察院有压力，所以局内搞了个小型调查组。我正好也觉得范泽有问题，就自己请缨了。麦子期和韩维恩都是禾港调来的。麦子期老家也在宜州，我大学就认识他，后来他去搞经济犯罪了。麦子期是个懂行的人，就算知道点什么，也不会大肆张扬。韩维恩是麦子期带过来的，我之前不认识。”"}]]},{"t":"p","lines":[[{"b":false,"v":"“那怎么查到杨天一身上了？”"}]]},{"t":"p","lines":[[{"b":false,"v":"“我怎么知道？！这俩人查着查着就往那边去了。麦子期才怪呢，就刚开始交了询问几份录音，后面就完全找不到人了，再往后就是查到光辉这边，光辉吓坏了，就把他给杀了。韩维恩还好点，至少把丁凯奇的事查清了，而且事事都会写档案……我的档案系统怎么打不开了？……算了，他也没好哪儿去，这死小孩竟然敢撞我！”"}]]},{"t":"p","lines":[[{"b":false,"v":"“小韩？”"}]]},{"t":"p","lines":[[{"b":false,"v":"“旭总，根据看守所的讯问结果，韩维恩供述自己是喝多了，不小心撞进便利店的。虽然他驾驶的车辆产权上属于麦子期……大概率会以酒驾过失来结案。另外，根据我们的调查，韩维恩并不是调查组的组员。他只是来宜州旅游的大学生，不知怎么跟麦子期混到一起了。”"}]]},{"t":"p","lines":[[{"b":false,"v":"“什么！他——他骗我？我怎么会——”"}]]},{"t":"p","lines":[[{"b":false,"v":"“珀涯，你先别激动。这件事我们来处理。来，你先躺好。”"}]]},{"t":"p","lines":[[{"b":false,"v":"“喂，韩彬。为什么我的手环上写着范泽？”"}]]},{"t":"p","lines":[[{"b":false,"v":"“您被送医时，身上有范泽的身份证。现场没有人清楚您的身份，所以……抱歉，旭总。已经和医院沟通过了，今天就能改回来。”"}]]},{"t":"p","lines":[[{"b":false,"v":"“珀涯，你好好休息，有事给我打电话。另外，从今天起，先别联系薛怜了。”"}]]},{"t":"p","lines":[[{"b":false,"v":"“薛检怎么了？他也出事——”"}]]},{"t":"p","lines":[[{"b":false,"v":"“不，他好好的。你只要记住，他已经不是自己人了。”"}]]},{"t":"h","lines":[[{"b":false,"v":"编外-终于嫌隙"}]]},{"t":"p","lines":[[{"b":false,"v":"“我算是完成任务了吗？”"}]]},{"t":"p","lines":[[{"b":false,"v":"“当然了。你完成得很好。虽然方式有点粗暴……你怎么会想到这样的方法？”"}]]},{"t":"p","lines":[[{"b":false,"v":"“手机定位确认李光辉进入便利店后，我一直在思考。如果只判七年，我可以接受。”"}]]},{"t":"p","lines":[[{"b":false,"v":"“你有李光辉的手机号？”"}]]},{"t":"p","lines":[[{"b":false,"v":"“我查了丁凯奇的通话记录。死前三个月所有跟他通过电话的人，我都彻底查过了，包括范泽。所以，麦哥一跟我打电话，我就知道怎么回事了。很奇怪，他没有给李珀涯打过电话。我被捕前还给她发了邮件……这几天我才想明白，李珀涯是警局的内鬼。她是李胜利的女儿，李珀涯是她成年后改的名字。李光辉常年在宜州滞留，她是唯一的经济来源。您跟麦哥解释过吗？他是李珀涯的大学同学，知道她改过名的事——”"}]]},{"t":"p","lines":[[{"b":false,"v":"“抱歉，麦子期已经死了。”"}]]},{"t":"p","lines":[[{"b":false,"v":"“……这也是李光辉做的？”"}]]},{"t":"p","lines":[[{"b":false,"v":"“目前来看是这样。尸体是在李光辉住处的冰箱里发现的。”"}]]},{"t":"p","lines":[[{"b":false,"v":"“是我的错。如果我再高一点，麦哥就会带我一起去了。我……”"}]]},{"t":"p","lines":[[{"b":false,"v":"“没关系。至少结果是好的，现在所有案子都能推给李光辉了。你只是喝多了误入现场，不会判太久。考虑到档案数据你也已经破解销毁了，这起案子里不会有你的痕迹。”"}]]},{"t":"p","lines":[[{"b":false,"v":"“薛检，我能问个问题吗？”"}]]},{"t":"p","lines":[[{"b":false,"v":"“你说。”"}]]},{"t":"p","lines":[[{"b":false,"v":"“辛家埠的案子，您真的参与了吗？”"}]]},{"t":"p","lines":[[{"b":false,"v":"“什么？”"}]]},{"t":"p","lines":[[{"b":false,"v":"“杨天一明知他们是左旭升派来的。在被三人组挟持的状态下，他一定会把左旭升的罪过尽可能讲得更轻，争取被灭口前见到左旭升本人。在他的供述中，左旭升几乎是个局外人。可他还是死了。因为丁凯奇不是左旭升的人，是您的人。是您帮他进了检察院，又一直带他办案。”"}]]},{"t":"p","lines":[[{"b":false,"v":"“……”"}]]},{"t":"p","lines":[[{"b":false,"v":"“按照杨天一的说法，就算他手里有证据，也只能有您杀人的证据，而不是左旭升。毕竟左旭升根本没动手。就算只是为了钱，他也应该先找您。以您和旭凌集团的关系，谁都知道您不缺钱。可他还是直接去找左旭升了。到底是什么样的证据，能直接定位到左旭升本人？”"}]]},{"t":"p","lines":[[{"b":false,"v":"“你问我吗？”"}]]},{"t":"p","lines":[[{"b":false,"v":"“我只是不明白。”"}]]},{"t":"p","lines":[[{"b":false,"v":"“没关系，我现在也不明白。我想，很快就会搞清楚。不用担心审判，我会为你想办法。运气好的话……左旭升会比你先入狱。”"}]]},{"t":"p","lines":[[{"b":false,"v":"“为什么？是魏娟的案子吗？”"}]]},{"t":"p","lines":[[{"b":false,"v":"“不是。但也可以是。”"}]]},{"t":"note","lines":[[{"b":false,"v":"——《请键入指令：始动篇》至此完结——"}],[{"b":false,"v":"——检索【伽西莫夫碎碎念】可得到无关紧要的作者碎碎念——"}],[{"b":false,"v":"——以上——"}]]}]},
+    {"id":"n-chenjingyu","title":"","track":"note","order":0,"requires":[],"person":[],"think":null,"unlocks":"","unlockWhen":[],"answer":"","trigger":"","term":"陈静雨","kind":"recall","mail":false,"news":false,"requireEarlier":false,"gate":0,"teaches":[],"learn":[],"blocks":[{"t":"p","lines":[[{"b":false,"v":"无法回忆。你与此人没有发生过直接交集。"}]]}]},
+    {"id":"n-dingkaiqi","title":"","track":"note","order":0,"requires":[],"person":[],"think":null,"unlocks":"","unlockWhen":[],"answer":"","trigger":"","term":"丁凯奇","kind":"recall","mail":false,"news":false,"requireEarlier":false,"gate":0,"teaches":[],"learn":[],"blocks":[{"t":"p","lines":[[{"b":false,"v":"无法回忆。你与此人交集过多，无法形成独立记忆文档。"}]]}]},
+    {"id":"n-hanbin","title":"","track":"note","order":0,"requires":[],"person":[],"think":null,"unlocks":"","unlockWhen":[],"answer":"","trigger":"","term":"韩彬","kind":"recall","mail":false,"news":false,"requireEarlier":false,"gate":0,"teaches":[],"learn":["左旭升"],"blocks":[{"t":"p","lines":[[{"b":false,"v":"你对此人仅有模糊印象：他是左旭升的秘书。"}]]}]},
+    {"id":"n-jiangyun","title":"","track":"note","order":0,"requires":[],"person":[],"think":null,"unlocks":"","unlockWhen":[],"answer":"","trigger":"","term":"江云","kind":"recall","mail":false,"news":false,"requireEarlier":false,"gate":0,"teaches":[],"learn":[],"blocks":[{"t":"p","lines":[[{"b":false,"v":"你与此人交集过多，无法形成独立记忆文档。"}]]}]},
+    {"id":"n-jiasimo","title":"","track":"note","order":0,"requires":[],"person":[],"think":null,"unlocks":"","unlockWhen":[],"answer":"","trigger":"","term":"伽西莫夫","kind":"recall","mail":false,"news":false,"requireEarlier":false,"gate":0,"teaches":[],"learn":["李珀涯"],"blocks":[{"t":"p","lines":[[{"b":false,"v":"李珀涯与此人毫无交集，无法触发回忆。"}]]}]},
+    {"id":"n-lishengli","title":"","track":"note","order":0,"requires":[],"person":[],"think":null,"unlocks":"","unlockWhen":[],"answer":"","trigger":"","term":"李胜利","kind":"recall","mail":false,"news":false,"requireEarlier":false,"gate":0,"teaches":[],"learn":[],"blocks":[{"t":"p","lines":[[{"b":false,"v":"相关记忆过于久远，无法形成独立记忆文档。"}]]}]},
+    {"id":"n-nandikou","title":"","track":"note","order":0,"requires":[],"person":[],"think":null,"unlocks":"","unlockWhen":[],"answer":"","trigger":"","term":"南堤口杀人埋尸案","kind":"search","mail":false,"news":false,"requireEarlier":false,"gate":0,"teaches":[],"learn":[],"blocks":[{"t":"p","lines":[[{"b":false,"v":"该内容已归档入关联档案，请输入主档案名称。"}]]}]},
+    {"id":"n-xuling","title":"","track":"note","order":0,"requires":[],"person":[],"think":null,"unlocks":"","unlockWhen":[],"answer":"","trigger":"","term":"旭凌集团","kind":"search","mail":false,"news":false,"requireEarlier":false,"gate":0,"teaches":[],"learn":[],"blocks":[{"t":"p","lines":[[{"b":false,"v":"档案中未见结果，可能在更远的探索中触发。"}]]}]},
+    {"id":"n-zhanghaoyang","title":"","track":"note","order":0,"requires":[],"person":[],"think":null,"unlocks":"","unlockWhen":[],"answer":"","trigger":"","term":"张昊阳","kind":"recall","mail":false,"news":false,"requireEarlier":false,"gate":0,"teaches":[],"learn":[],"blocks":[{"t":"p","lines":[[{"b":false,"v":"无法回忆。你与此人没有发生过直接交集。"}]]}]},
+    {"id":"n-zhaoshuo","title":"","track":"note","order":0,"requires":[],"person":[],"think":null,"unlocks":"","unlockWhen":[],"answer":"","trigger":"","term":"赵烁","kind":"recall","mail":false,"news":false,"requireEarlier":false,"gate":0,"teaches":[],"learn":[],"blocks":[{"t":"p","lines":[[{"b":false,"v":"无法回忆。你与此人没有发生过直接交集。"}]]}]}
+  ]
+};
+
+</script>
+<script>
+/* ==========================================================================
+   界面文案与指令表 —— 全项目唯一出处
+   --------------------------------------------------------------------------
+   规则：
+     1. 玩家能看见的每一个系统字符串都在这里，别处不许再出现字面量。
+     2. 改动任何一句 = 改产品，需在 docs/SPEC.md 同步记一笔。
+     3. 文案规范见 docs/SPEC.md §4：陈述句、句末句号、无感叹号。
+   ========================================================================== */
+
+(function (SW) {
+  'use strict';
+
+  /* 反馈码 → 文案。编号连续，新增只许往后退。 */
+  var T = Object.freeze({
+    f1: '文件不存在。请检查文件名称。',
+    f2: '指令语法错误，请键入指令，查看指令列表，检查指令逻辑。',
+    f3: '指令无效。',
+    f4: '未检测到人类行为。',
+    f5: '当前系统界面及交互指令仅支持中文。',
+    f6: '你好。请键入指令。',
+    f7: '请键入中文指令。',
+    f8: '如需帮助，请键入指令。',
+    f9: '尚未开始。请键入指令。',
+    f10: '已开始，请键入指令。',
+    f11: '确认退出？这将删除您的所有访问痕迹。请再次输入指令，以防止误触。',
+    f12: '信息不全，无法进一步思考。',
+    f13: '尚未下载任何记忆或文档。',
+    f14: '认证失败。请键入指令。',
+    f15: '你隐约记得某件事……也许你需要更多信息辅助回忆',
+    f16: '检索失败，请检查文件名称是否存在特殊格式。',
+    f17: '档案无法加载，需要下载前置档案。请确认前置档案。',
+    f18: '人类的认知无法超出自己的记忆——你真的是人类吗？',
+
+    askName: '请输入你的名字。',
+    hint: '请键入指令查看指令逻辑。',
+    allDone: '已解锁全部内容，你似乎需要思考现状？',
+
+    saveDone: '系统使用自动存档，本指令仅用于导出存档。存档已下载。',
+    loadDone: '存档已载入。',
+    loadBad: '存档无法读取。请检查存档文件。',
+    newCmd: '新指令：{0}。'
+  });
+
+  /* 启动块：逐字锁定，见 docs/VISUAL.md §5.4 */
+  var BOOT = Object.freeze([
+    { tone: 'ink', text: '思维系统 正在启动.....' },
+    { tone: 'dim', text: '载入检索模块 OK' },
+    { tone: 'dim', text: '校验访问权限 OK' },
+    { tone: 'ink', text: '就绪。请键入指令。' }
+  ]);
+
+  /* 明码指令：玩家在 `指令` 里看到的就是这张表，顺序即编号。
+     gate   = 需要 state.unlocked 里的哪一格
+     params = 带【】参数 */
+  var COMMANDS = [
+    { key: '指令', label: '指令', desc: '查询指令列表。' },
+    { key: '思考', label: '思考', desc: '进入思考状态。' },
+    { key: '新闻', label: '新闻', desc: '查看今日新闻。' },
+    { key: '列表', label: '列表', desc: '查看已拥有的记忆或档案。' },
+    { key: '语言', label: '语言', desc: '切换系统语言<当前仅支持简体中文>。' },
+    { key: '邮箱', label: '邮箱', desc: '查看邮件信息。', gate: '邮箱' },
+    { key: '回忆', label: '回忆【人物名称】', params: true, gate: '回忆', desc: '回忆此人与你发生过的部分交集。记忆将自动下载。已下载的记忆不会重复下载。' },
+    { key: '检索', label: '检索【档案名称】', params: true, gate: '检索', desc: '在档案区检索对应名称档案。档案名称使用精确匹配，请键入完整档案名称。档案将自动下载。已下载的档案不会重复下载。' },
+    { key: '存档', label: '存档', desc: '导出当前的系统状态。' },
+    { key: '读档', label: '读档', desc: '导入保存的系统状态。' },
+    { key: '退出', label: '退出', desc: '退出档案系统。' }
+  ];
+
+  /* 特殊词：与指令表是两套东西，都不命中才落 F3 */
+  var GREET = ['你好', '您好', '嗨', '哈喽'];
+
+  /* 内容不能用的标题 / 触发词：会和指令、特殊词撞车 */
+  var RESERVED = COMMANDS.map(function (c) { return c.key; })
+    .concat(GREET).concat(['帮助', '开始']);
+
+  function format(tpl) {
+    var args = Array.prototype.slice.call(arguments, 1);
+    return String(tpl).replace(/\{(\d+)\}/g, function (m, i) {
+      return args[i] === undefined ? m : String(args[i]);
+    });
+  }
+
+  SW.copy = {
+    T: T,
+    BOOT: BOOT,
+    COMMANDS: COMMANDS,
+    GREET: GREET,
+    RESERVED: RESERVED,
+    format: format
+  };
+})(globalThis.SIWEI = globalThis.SIWEI || {});
+
+</script>
+<script>
+/* ==========================================================================
+   状态与存档 —— 纯数据，不碰 DOM，不认 localStorage
+   --------------------------------------------------------------------------
+   存档适配器：任何有 getItem / setItem / removeItem 的对象都能用。
+   浏览器给 window.localStorage，测试给假对象。
+   ========================================================================== */
+
+(function (SW) {
+  'use strict';
+
+  var VERSION = 2;
+  var KEY = 'siwei.save.v2';
+
+  function create() {
+    return {
+      v: VERSION,
+      cmdUsed: false,        // 用过 `指令`，F9/F10 用
+      pendingExit: false,    // 退出确认态，不存档
+      discovered: [],        // 已拿到的条目 id，决定 列表 / requires / 邮箱 gate
+      known: [],             // 已解锁的关联词：检索 / 回忆 只认这里面的词
+      givenThink: 0,         // 思考是否已交出起点：0 / 1
+      ended: '',             // 结局条目 id
+      cleared: false,        // 已经通关（输入对名字）
+      awaitName: false,      // 正在等玩家输入名字，不存档
+      hinted: false,         // 检索+回忆都解锁后那句「请键入指令查看指令逻辑」是否已提示
+      notified: false,       // 结局要的文件集齐后那句「已解锁全部内容…」是否已提示
+      mails: [],             // 已投递的邮件 id（只记投递，不再当闸门）
+      unlocked: { '邮箱': false, '回忆': false, '检索': false }
+    };
+  }
+
+  /* 把任意来源的对象洗成合法状态；hasId 用来丢掉内容库里不存在的 id。
+     正文改字、删条目都不该让存档炸掉。 */
+  function adopt(raw, hasId) {
+    var base = create();
+    if (!raw || typeof raw !== 'object') return base;
+
+    function keep(list) {
+      if (!Array.isArray(list)) return [];
+      var seen = {};
+      return list.filter(function (id) {
+        if (typeof id !== 'string' || !id || seen[id]) return false;
+        if (hasId && !hasId(id)) return false;
+        seen[id] = true;
+        return true;
+      });
+    }
+
+    /* known 存的是玩家敲的词，不是条目 id，所以不能过 hasId；
+       内容库里已经没有的词留着也没害处——它敲不到任何东西。 */
+    function keepWords(list) {
+      if (!Array.isArray(list)) return [];
+      var seen = {};
+      return list.filter(function (w) {
+        if (typeof w !== 'string' || !w || seen[w]) return false;
+        seen[w] = true;
+        return true;
+      });
+    }
+
+    base.cmdUsed = !!raw.cmdUsed;
+    base.pendingExit = false;
+    base.awaitName = false;
+    base.givenThink = Number(raw.givenThink) > 0 ? 1 : 0;
+    base.ended = typeof raw.ended === 'string' ? raw.ended : '';
+    base.cleared = !!raw.cleared;
+    base.hinted = !!raw.hinted;
+    base.notified = !!raw.notified;
+    base.discovered = keep(raw.discovered);
+    base.known = keepWords(raw.known);
+    base.mails = keep(raw.mails);
+    var u = raw.unlocked || {};
+    Object.keys(base.unlocked).forEach(function (k) { base.unlocked[k] = !!u[k]; });
+    return base;
+  }
+
+  function save(state, storage) {
+    if (!storage) return false;
+    try {
+      storage.setItem(KEY, JSON.stringify(state));
+      return true;
+    } catch (e) {
+      return false;   // 隐私模式、配额满：静默失败，不打断游戏
+    }
+  }
+
+  /* 导出：只写会持久化的字段（退出确认、等名字是瞬时态，不进存档）。
+     缩进两格，导出的文件人也能直接读。 */
+  function exportText(state) {
+    var s = adopt(state);
+    return JSON.stringify({
+      v: VERSION,
+      cmdUsed: s.cmdUsed,
+      discovered: s.discovered,
+      known: s.known,
+      givenThink: s.givenThink,
+      ended: s.ended,
+      cleared: s.cleared,
+      hinted: s.hinted,
+      notified: s.notified,
+      mails: s.mails,
+      unlocked: s.unlocked
+    }, null, 2) + '\n';
+  }
+
+  /* 导入：版本必须是 2、且带 discovered 数组，否则当作不是存档。
+     hasId 用来丢掉内容库里已经不存在的 id——删条目、改正文都不会炸档。 */
+  function importText(text, hasId) {
+    if (typeof text !== 'string') return null;
+    var body = text.replace(/^\uFEFF/, '');        // 记事本另存为会带 BOM
+    if (!body.trim()) return null;
+    var obj;
+    try { obj = JSON.parse(body); } catch (e) { return null; }
+    if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return null;
+    if (obj.v !== VERSION || !Array.isArray(obj.discovered)) return null;
+    return adopt(obj, hasId);
+  }
+
+  function load(storage, hasId) {
+    if (!storage) return null;
+    var raw;
+    try { raw = storage.getItem(KEY); } catch (e) { return null; }
+    return importText(raw, hasId);
+  }
+
+  function clear(storage) {
+    if (!storage) return;
+    try { storage.removeItem(KEY); } catch (e) { /* 忽略 */ }
+  }
+
+  SW.state = {
+    VERSION: VERSION,
+    KEY: KEY,
+    create: create,
+    adopt: adopt,
+    save: save,
+    load: load,
+    exportText: exportText,
+    importText: importText,
+    clear: clear
+  };
+})(globalThis.SIWEI = globalThis.SIWEI || {});
+
+</script>
+<script>
+/* ==========================================================================
+   引擎 —— 输入一行，输出事件数组
+   --------------------------------------------------------------------------
+   这里没有 DOM、没有计时器、没有存储。
+   判定顺序见 docs/SPEC.md §2，改顺序等于改产品。
+
+   两条带括号的动词各管一栏：
+     回忆【关键词】   → 只查记忆（左栏）
+     检索【档案名称】 → 只查档案（右栏）
+
+    结局（track: end）是记忆：落左栏、进记忆列表。它只由认证（思考 → 你的名字）
+    交出来；通关之后也挂在自己 person 那个人名上，而且标题在两个动词里都认——
+    `列表` 只给标题，玩家就会照着标题敲，不认就等于把人锁在门外。
+
+   认知锁：检索 / 回忆 只认 state.known 里的词。词是读出来的——每份内容带着
+   构建期算好的 learn（标题、别名、正文里出现过的能敲的词），读到就记下。
+   敲了库里存在、但还没读到过的词 → F18，不给正文，也不解锁。
+
+   事件（ui 层只认这些）：
+     echo        { text }                       玩家输入回显
+     sys         { text }                       系统行（含 **强调**）
+     memory      { track, id, title, blocks }   记忆正文 → 左栏
+     doc         { track, id, title, blocks }   档案正文 → 右栏
+     commandList { rows: [{ n, label, desc }] } 指令表
+     catalog     { sections: [{ area, label, rows }] }  列表（分栏落）
+     clear       {}                             清屏（退出确认后）
+   ========================================================================== */
+
+(function (SW) {
+  'use strict';
+
+  var CJK = /[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]/;
+  var ARG = /^【([^】]+)】$/;
+
+  function createEngine(opts) {
+    var T = opts.T;
+    var commands = opts.commands || [];
+    var greet = opts.greet || [];
+    var entries = (opts.entries || []).slice();
+
+    var byId = new Map();
+    var docs = [];
+    var mems = [];
+    var ends = [];
+    var notes = { recall: new Map(), search: new Map() };
+
+    entries.forEach(function (e) {
+      byId.set(e.id, e);
+      if (e.track === 'doc') {
+        docs.push(e);
+      } else if (e.track === 'memory') {
+        mems.push(e);
+      } else if (e.track === 'end') {
+        ends.push(e);
+      } else if (e.track === 'note') {
+        notes[e.kind].set(e.term, e);
+      }
+    });
+
+    var byOrder = function (a, b) { return (a.order - b.order) || (a.id < b.id ? -1 : 1); };
+    docs.sort(byOrder);
+    mems.sort(byOrder);
+    ends.sort(byOrder);
+
+    var state = SW.state.create();
+
+    /* ---------- 认知（关联词） ----------
+
+       玩家敲的词只能来自他读过的东西。每份内容的 learn 是构建期算好的：
+       正文里出现的所有"能被敲的词"，加上作者手写的 teaches。
+       读到一份 = 它的标题 + 别名 + learn 全部进 known。 */
+
+    function remember(word) {
+      if (typeof word !== 'string' || !word) return;
+      if (state.known.indexOf(word) < 0) state.known.push(word);
+    }
+
+    function rememberEntry(e) {
+      if (!e) return;
+      remember(e.title);
+      remember(e.trigger);
+      (e.learn || []).forEach(remember);
+    }
+
+    function knows(word) { return state.known.indexOf(word) >= 0; }
+
+    /* 条目认不认识：标题或别名有一个在手就算 */
+    function knowsEntry(e) { return knows(e.title) || (!!e.trigger && knows(e.trigger)); }
+
+    /* ---------- 内容查询 ---------- */
+
+    function has(id) { return state.discovered.indexOf(id) >= 0; }
+
+    function reqOf(e) {
+      var r = e.requires;
+      if (!r) return [];
+      return Array.isArray(r) ? r : [r];
+    }
+
+    function reqMet(e) {
+      return reqOf(e).every(function (id) { return byId.has(id) && has(id); });
+    }
+
+    function personsOf(e) {
+      var k = e.person;
+      if (!k) return [];
+      return Array.isArray(k) ? k : [k];
+    }
+
+    function discover(e) {
+      if (!has(e.id)) state.discovered.push(e.id);
+      rememberEntry(e);               // 读到就认识：标题、别名、正文里出现过的词
+    }
+
+    /* 解锁只认两件事：这份内容已经拿到，且它的 unlockWhen 全都拿到。
+       每次拿到新内容后重扫一遍——后到的条件也能把前一个解锁补上。 */
+    function grantUnlocks(events) {
+      var unlockedNow = 0;
+      entries.forEach(function (e) {
+        var name = e.unlocks;
+        if (!name || state.unlocked[name] !== false) return;
+        if (!has(e.id)) return;
+        var need = e.unlockWhen || [];
+        if (!need.every(has)) return;
+        state.unlocked[name] = true;
+        unlockedNow += 1;
+        events.push({ kind: 'sys', text: SW.copy.format(T.newCmd, name) });
+      });
+
+      /* 检索和回忆都到手了，提醒一次怎么查规则 */
+      if (unlockedNow && !state.hinted && state.unlocked['检索'] && state.unlocked['回忆']) {
+        state.hinted = true;
+        events.push({ kind: 'sys', text: T.hint });
+      }
+    }
+
+    /* 结局要的文件全部到手：提示一次，让玩家去 `思考`
+       （作者原话，见 docs/COPY.md） */
+    function notifyComplete(events) {
+      if (state.notified || state.cleared) return;
+      if (!ends.length) return;
+      var need = reqOf(ends[0]);
+      if (!need.length || !need.every(has)) return;
+      state.notified = true;
+      events.push({ kind: 'sys', text: T.allDone });
+    }
+
+    function memoryCount() {
+      return state.discovered.filter(function (id) {
+        var e = byId.get(id);
+        return !!e && e.track === 'memory';
+      }).length;
+    }
+
+    function padded(n) { return String(n).padStart(2, '0'); }
+
+    function ending() { return ends[0] || null; }
+
+    /* ---------- 事件构造 ---------- */
+
+    function fail(events, text) {
+      events.push({ kind: 'sys', text: text });
+      return { reset: false };
+    }
+
+    function memoryEvent(e) {
+      /* 结局（track: end）也是记忆：落左栏、楷体缩进、进记忆列表 */
+      return { kind: 'memory', track: 'memory', id: e.id, title: e.title, blocks: e.blocks || [] };
+    }
+
+    function docEvent(e) {
+      return { kind: 'doc', track: 'doc', id: e.id, title: e.title, blocks: e.blocks || [] };
+    }
+
+    /* ---------- 各个动作 ---------- */
+
+    function readMemory(e, events) {
+      discover(e);
+      events.push(memoryEvent(e));
+      grantUnlocks(events);
+      notifyComplete(events);
+      return { reset: false };
+    }
+
+    function readDoc(e, events) {
+      discover(e);
+      events.push(docEvent(e));
+      grantUnlocks(events);
+      notifyComplete(events);
+      return { reset: false };
+    }
+
+    function think(events) {
+      /* 第一次：交出 think 最小的那份记忆（起点） */
+      if (state.givenThink === 0) {
+        var cand = mems.filter(function (e) { return typeof e.think === 'number'; })
+          .sort(function (a, b) { return (a.think - b.think) || byOrder(a, b); })[0];
+        if (!cand) return fail(events, T.f12);
+        state.givenThink = 1;
+        return readMemory(cand, events);
+      }
+
+      /* 之后：前提齐了就发问，不齐就是 f12 */
+      var end = ending();
+      if (end && !state.cleared && reqMet(end)) {
+        state.awaitName = true;
+        events.push({ kind: 'sys', text: T.askName });
+        return { reset: false };
+      }
+      return fail(events, T.f12);
+    }
+
+    function answer(raw, events) {
+      var end = ending();
+      state.awaitName = false;
+      if (end && end.answer && raw === end.answer) {
+        state.cleared = true;
+        state.ended = end.id;
+        discover(end);
+        events.push(memoryEvent(end));  // 结局是记忆：落左栏、进记忆列表
+        return { reset: false };
+      }
+      return fail(events, T.f14);
+    }
+
+    /* 一个人可以有多段交集：一次回忆把"现在想得起来、还没想起过"的全给出来。
+       全都想过了就重新读一遍。取不到的（requires 没满足）静默跳过。
+       这个人没有记忆、但目录里写了一条 note 的，就交那句固定回执。
+       认知锁：人名不在 known 里 = 你还没在任何地方见过他，F18。
+
+       结局也是记忆：通关之后它挂在自己 person 那个人名上（就是 answer 那个名字），
+       也可以直接按标题回忆。认证之前一律不交——交出去就等于跳过通关。 */
+    function recall(name, events) {
+      var end = ending();
+      var endTitle = !!end && (name === end.title || (!!end.trigger && name === end.trigger));
+
+      /* 按标题回忆：只认结局这一份；标题是拿到之后才认得的词 */
+      if (endTitle) {
+        if (!knows(name) || !has(end.id)) return fail(events, T.f18);
+        return readMemory(end, events);
+      }
+
+      var matches = mems.filter(function (e) { return personsOf(e).indexOf(name) >= 0; });
+      if (end && personsOf(end).indexOf(name) >= 0) matches.push(end);
+
+      if (!matches.length) {
+        var miss = notes.recall.get(name);
+        if (!miss) return fail(events, T.f1);
+        if (!knows(name)) return fail(events, T.f18);
+        return reply(miss, events) || fail(events, T.f1);
+      }
+      if (!knows(name)) return fail(events, T.f18);
+
+      /* 认证之前，结局还没到"想得起来"那一步：它匹配得上，但不出正文 */
+      var ready = matches.filter(reqMet).filter(function (e) {
+        return e.track !== 'end' || has(e.id);
+      });
+      if (!ready.length) return fail(events, T.f15);
+
+      var fresh = ready.filter(function (m) { return !has(m.id); });
+      var show = fresh.length ? fresh : ready;
+
+      show.forEach(function (m) {
+        discover(m);
+        events.push(memoryEvent(m));
+      });
+      grantUnlocks(events);
+      notifyComplete(events);
+      return { reset: false };
+    }
+
+    /* 前置档案：带 requireEarlier 的档案，列表里排在它前面的每一份都要先到手。
+       已经下载过的不再拦——重新读不算解锁。
+       返回还缺的那几份，空数组就是可以加载。 */
+    function missingEarlier(e) {
+      if (!e.requireEarlier || has(e.id)) return [];
+      return docs.filter(function (o) {
+        return o.order < e.order && !has(o.id);
+      });
+    }
+
+    /* 档案按标题或 trigger 认；都对不上再看 search 类 note。
+       如果敲的是一个"人"（记忆里有他、或目录里给他留了回忆回执），
+       那多半是把人名当文件名敲了，回 f16 而不是「文件不存在」。
+       结局是唯一的例外：它是记忆，标题却认（见上面的说明）。
+
+       认知锁先于 requires：库里确实有这个词、但玩家还没在任何正文里见过它，
+       就是 F18（不是 F1）——敲对了名字却"没看过"，本身就是泄露。 */
+    function search(title, events) {
+      var d = docs.filter(function (e) {
+        return e.title === title || e.trigger === title;
+      })[0] || null;
+
+      /* 认识 → requires 没满足 = 当作不存在（F1）；前置档案没下齐 = 档案在、加载不了（F17） */
+      if (d) {
+        if (!knowsEntry(d)) return fail(events, T.f18);
+        if (!reqMet(d)) return fail(events, T.f1);
+        if (missingEarlier(d).length) return fail(events, T.f17);
+        return readDoc(d, events);
+      }
+
+      /* 结局是记忆，可它的标题照样能检索：`列表` 只给标题，玩家就会照着标题敲。
+         标题是拿到这份记忆之后才认得的词——之前一律 F18，不给正文。 */
+      var end = ending();
+      if (end && (title === end.title || (!!end.trigger && title === end.trigger))) {
+        if (!knows(title) || !has(end.id)) return fail(events, T.f18);
+        return readMemory(end, events);
+      }
+
+      var note = notes.search.get(title);
+      if (note) {
+        if (!knows(title)) return fail(events, T.f18);
+        return reply(note, events) || fail(events, T.f1);
+      }
+
+      if (isPerson(title)) return fail(events, knows(title) ? T.f16 : T.f18);
+      return fail(events, T.f1);
+    }
+
+    /* 人名：记忆里挂着他、目录里给他留了回忆回执，或者他一头挂在结局上。
+       结局的 `person` 也算法——`检索【李珀涯】` 该回「这是人名」，不是「文件不存在」。 */
+    function isPerson(name) {
+      if (notes.recall.has(name)) return true;
+      if (mems.some(function (e) { return personsOf(e).indexOf(name) >= 0; })) return true;
+      var end = ending();
+      return !!end && personsOf(end).indexOf(name) >= 0;
+    }
+
+    /* note 的回执：留在左栏，样式和系统行一样，但允许正文的块语法。
+       回执正文里提到的人名也算"见过"（比如韩彬那句里的左旭升）。 */
+    function reply(note, events) {
+      if (!note || !reqMet(note)) return null;
+      rememberEntry(note);
+      events.push({ kind: 'reply', blocks: note.blocks, id: note.id });
+      return { reset: false };
+    }
+
+    /* 新闻：每次都是同一份，读过也能再读。回顾是玩家的正当需求，不再设闸门。 */
+    function news(events) {
+      var n = docs.filter(function (e) { return e.news; })[0];
+      if (!n) return fail(events, T.f1);
+      return readDoc(n, events);
+    }
+
+    function catalog(events) {
+      /* 结局是记忆，跟记忆段一起列，按 order 排在 00–09 之后 */
+      var memRows = mems.concat(ends).filter(function (e) { return has(e.id); })
+        .sort(byOrder)
+        .map(function (e) { return { n: padded(e.order), title: e.title }; });
+
+      /* 档案段只列 doc；结局不再算档案 */
+      var docRows = docs.filter(function (e) { return has(e.id); })
+        .map(function (e) { return { n: padded(e.order), title: e.title }; });
+
+      if (!memRows.length && !docRows.length) return fail(events, T.f13);
+
+      /* 空的段直接不出现：没有就别摆个空标题 */
+      var sections = [];
+      if (memRows.length) sections.push({ area: 'mem', label: '记忆', rows: memRows });
+      if (docRows.length) sections.push({ area: 'doc', label: '档案', rows: docRows });
+
+      events.push({ kind: 'catalog', sections: sections });
+      return { reset: false };
+    }
+
+    /* 读档之后要重画一遍目录，又不能伪造一行回显，所以单开一个入口 */
+    function catalogEvents() {
+      var events = [];
+      catalog(events);
+      return events;
+    }
+
+    /* 邮箱：还有没投过的就先投；投完了停在最近一封，可以反复打开。
+       现在只有一封，所以每次都是同一封。 */
+    function mail(events) {
+      if (!state.unlocked['邮箱']) return fail(events, T.f3);
+      var count = memoryCount();
+      var next = docs.filter(function (e) {
+        return e.mail && state.mails.indexOf(e.id) < 0 && (e.gate || 0) <= count;
+      })[0];
+      if (next) {
+        state.mails.push(next.id);
+        return readDoc(next, events);
+      }
+      var last = state.mails.length ? byId.get(state.mails[state.mails.length - 1]) : null;
+      if (!last) return fail(events, T.f1);
+      return readDoc(last, events);
+    }
+
+    /* 存档：状态本来每输入一次就自动存了，这一条只负责导出一份文件。
+       JSON 由核心层拼好；下不下载、怎么下载，是组装层的事。 */
+    function exportSave(events) {
+      events.push({ kind: 'sys', text: T.saveDone });
+      events.push({ kind: 'export', text: SW.state.exportText(state) });
+      return { reset: false };
+    }
+
+    /* 读档：选文件、读文件、写回状态都在组装层；这里只发一个信号。 */
+    function importSave(events) {
+      events.push({ kind: 'import' });
+      return { reset: false };
+    }
+
+    function quit(events) {
+      if (!state.pendingExit) {
+        state.pendingExit = true;
+        return fail(events, T.f11);
+      }
+      Object.assign(state, SW.state.create());
+      events.push({ kind: 'clear' });
+      return { reset: true };
+    }
+
+    function commandRows() {
+      var rows = [];
+      commands.forEach(function (c) {
+        if (c.gate && !state.unlocked[c.gate]) return;
+        rows.push({ n: rows.length, label: c.label, desc: c.desc });
+      });
+      return rows;
+    }
+
+    function commandList(events) {
+      state.cmdUsed = true;
+      state.unlocked['邮箱'] = true;
+      events.push({ kind: 'commandList', rows: commandRows() });
+      return { reset: false };
+    }
+
+    /* 条目自带 gate（邮箱 / 回忆 / 检索）时先查解锁，没开一律 F3。 */
+    function run(cmd, arg, events) {
+      if (cmd.gate && !state.unlocked[cmd.gate]) return fail(events, T.f3);
+      if (cmd.params) {
+        if (arg === null) return fail(events, T.f2);
+        switch (cmd.key) {
+          case '回忆': return recall(arg, events);
+          case '检索': return search(arg, events);
+          default: return fail(events, T.f3);
+        }
+      }
+      switch (cmd.key) {
+        case '指令': return commandList(events);
+        case '思考': return think(events);
+        case '新闻': return news(events);
+        case '列表': return catalog(events);
+        case '语言': return fail(events, T.f5);
+        case '邮箱': return mail(events);
+        case '存档': return exportSave(events);
+        case '读档': return importSave(events);
+        case '退出': return quit(events);
+        default: return fail(events, T.f3);
+      }
+    }
+
+    /* ---------- 入口 ---------- */
+
+    function handle(raw) {
+      var events = [];
+
+      if (raw === '') return { events: events, reset: false };
+      events.push({ kind: 'echo', text: raw });
+
+      var s = raw.trim();
+
+      /* 认证态：这一行整行都是"名字"，不再判指令 */
+      if (state.awaitName) {
+        if (s === '') return finish(fail(events, T.f4));
+        return finish(answer(s, events));
+      }
+
+      if (s === '') return finish(fail(events, T.f4));
+      if (!CJK.test(s)) return finish(fail(events, T.f7));
+
+      /* 4. 逐字等于指令表 */
+      var cmd = commands.filter(function (c) { return s === c.key; })[0] || null;
+
+      /* 5. 指令词开头 → 括号解析 */
+      if (!cmd) {
+        cmd = commands.filter(function (c) {
+          return s.length > c.key.length && s.indexOf(c.key) === 0;
+        })[0] || null;
+      }
+
+      if (cmd) {
+        var arg = null;
+        if (s !== cmd.key) {
+          if (!cmd.params) return finish(fail(events, T.f3));
+          var rest = s.slice(cmd.key.length).trim();
+          var hit = ARG.exec(rest);
+          if (!hit) return finish(fail(events, T.f2));
+          arg = hit[1].trim();
+          /* 括号里只有空白：按"空检索框"处理 */
+          if (arg === '') return finish(fail(events, T.f4));
+        }
+        return finish(run(cmd, arg, events));
+      }
+
+      /* 6. 特殊词表（问候按前缀认，你好 / 你好啊 都算） */
+      if (greet.some(function (g) { return s === g || s.indexOf(g) === 0; })) {
+        return finish(fail(events, T.f6));
+      }
+      if (s === '帮助') return finish(fail(events, T.f8));
+      if (s === '开始') return finish(fail(events, state.cmdUsed ? T.f10 : T.f9));
+
+      /* 7. 兜底 */
+      return finish(fail(events, T.f3));
+
+      function finish(r) { return { events: events, reset: !!r.reset }; }
+    }
+
+    /* ---------- 存档 / 种子 ---------- */
+
+    function restore(saved) {
+      if (!saved) return;
+      Object.assign(state, SW.state.adopt(saved, function (id) { return byId.has(id); }));
+      /* 老存档里没有 known（或者正文改过）：按"已经拿到的"重教一遍，
+         免得读一份旧档就把玩家锁在门外。 */
+      state.discovered.forEach(function (id) { rememberEntry(byId.get(id)); });
+    }
+
+    function seedOpen() {
+      state.cmdUsed = true;
+      Object.keys(state.unlocked).forEach(function (k) { state.unlocked[k] = true; });
+      state.discovered = entries.map(function (e) { return e.id; });
+      entries.forEach(rememberEntry);
+      state.mails = entries.filter(function (e) { return e.mail; }).map(function (e) { return e.id; });
+      state.givenThink = 1;
+      state.cleared = true;
+      state.awaitName = false;
+      state.ended = ends.length ? ends[0].id : '';
+    }
+
+    if (opts.open) seedOpen();
+
+    return {
+      state: state,
+      entries: entries,
+      bank: { byId: byId, docs: docs, mems: mems, ends: ends },
+      handle: handle,
+      restore: restore,
+      catalogEvents: catalogEvents,
+      seedOpen: seedOpen
+    };
+  }
+
+  SW.createEngine = createEngine;
+})(globalThis.SIWEI = globalThis.SIWEI || {});
+
+</script>
+<script>
+/* ==========================================================================
+   渲染 —— 内容块 → DOM
+   --------------------------------------------------------------------------
+   进来的是构建期编译好的块，不是 markdown：
+     { t: 'p',    lines: [[seg, …], …] }
+     { t: 'note', lines: [...] }      批注，灰一档
+     { t: 'h',    lines: [...] }      小标题
+     { t: 'kv',   head: [seg…], rows: [[seg…], …] }
+     { t: 'hr' }
+     seg = { b: 布尔, v: 文本 }
+   这里不做正则、不做语法判定，只有拼装。
+   ========================================================================== */
+
+(function (SW) {
+  'use strict';
+
+  var doc = document;
+
+  /* 系统行里的 **强调**：唯一允许的内联标记，不跨行、不嵌套、未闭合原样输出 */
+  function segments(text) {
+    var out = [];
+    var i = 0;
+    var n = text.length;
+    while (i < n) {
+      var a = text.indexOf('**', i);
+      if (a < 0) { out.push({ b: false, v: text.slice(i) }); break; }
+      var b = text.indexOf('**', a + 2);
+      if (b < 0) { out.push({ b: false, v: text.slice(i) }); break; }
+      if (a > i) out.push({ b: false, v: text.slice(i, a) });
+      out.push({ b: true, v: text.slice(a + 2, b) });
+      i = b + 2;
+    }
+    return out;
+  }
+
+  function segsNode(segs) {
+    var frag = doc.createDocumentFragment();
+    segs.forEach(function (s) {
+      if (!s.v) return;
+      if (s.b) {
+        var b = doc.createElement('b');
+        b.textContent = s.v;
+        frag.appendChild(b);
+      } else {
+        frag.appendChild(doc.createTextNode(s.v));
+      }
+    });
+    return frag;
+  }
+
+  function linesInto(el, lines) {
+    lines.forEach(function (segs, i) {
+      if (i) el.appendChild(doc.createElement('br'));
+      el.appendChild(segsNode(segs));
+    });
+    return el;
+  }
+
+  function blockNode(block) {
+    var el;
+    switch (block.t) {
+      case 'h':
+        el = doc.createElement('h3');
+        el.className = 'blk blk--h';
+        return linesInto(el, block.lines);
+      case 'note':
+        el = doc.createElement('p');
+        el.className = 'blk blk--note';
+        return linesInto(el, block.lines);
+      case 'hr':
+        el = doc.createElement('hr');
+        el.className = 'rule';
+        return el;
+      case 'kv':
+        /* 一张表拆成一张竖排字段卡：每个「标签：值」各占一行，
+           标签用 max-content 定宽，值在第二列换行——"住址" 不会断成 "住/址"。 */
+        el = doc.createElement('dl');
+        el.className = 'kv';
+        block.rows.forEach(function (row) {
+          row.forEach(function (cell, i) {
+            var label = block.head[i] || '';
+            var pair = doc.createElement('div');
+            pair.className = 'kv__pair';
+            if (label) {
+              var dt = doc.createElement('dt');
+              dt.appendChild(segsNode(label));
+              pair.appendChild(dt);
+            }
+            var dd = doc.createElement('dd');
+            dd.appendChild(segsNode(cell));
+            pair.appendChild(dd);
+            el.appendChild(pair);
+          });
+        });
+        return el;
+      default:
+        el = doc.createElement('p');
+        el.className = 'blk';
+        return linesInto(el, block.lines);
+    }
+  }
+
+  function blocks(list) {
+    var frag = doc.createDocumentFragment();
+    (list || []).forEach(function (b) { frag.appendChild(blockNode(b)); });
+    return frag;
+  }
+
+  function marker(text, track) {
+    var p = doc.createElement('p');
+    p.className = 'mark mark--' + (track === 'memory' ? 'mem' : 'doc');
+    p.textContent = text;
+    return p;
+  }
+
+  /* 一整份正文：上标记 + 正文 + 结束标记。记忆楷体缩进；档案（含结局）顶格宋体。 */
+  function file(entry) {
+    var isMem = entry.track === 'memory';
+    var frag = doc.createDocumentFragment();
+    frag.appendChild(marker('—— ' + (isMem ? '记忆' : '档案') + ' · ' + entry.title + ' ——', isMem ? 'memory' : 'doc'));
+    var body = doc.createElement('div');
+    body.className = 'file ' + (isMem ? 'file--mem' : 'file--doc');
+    body.appendChild(blocks(entry.blocks));
+    frag.appendChild(body);
+    frag.appendChild(marker('—— 结束 ——', isMem ? 'memory' : 'doc'));
+    return frag;
+  }
+
+  SW.render = {
+    segments: segments,
+    segsNode: segsNode,
+    blocks: blocks,
+    marker: marker,
+    file: file
+  };
+})(globalThis.SIWEI = globalThis.SIWEI || {});
+
+</script>
+<script>
+/* ==========================================================================
+   屏幕 —— 事件 → 左栏 / 右栏
+   --------------------------------------------------------------------------
+   左栏吃：回显、系统行、指令表、列表、记忆正文、启动块。
+   右栏只吃：档案正文。永不出现系统行。
+
+   折叠：一次命令 = 一轮（.round）。每栏只留最近 5 轮展开，更早的折起来，
+   栏顶留一行「前面 N 次已折叠」，点一下能展开/收起。正文一个字都不删。
+   ========================================================================== */
+
+(function (SW) {
+  'use strict';
+
+  var doc = document;
+  var R = SW.render;
+  var memStream = null;
+  var docStream = null;
+  var docPane = null;
+  var reduce = false;
+
+  var LIMIT = 5;                                        /* 每栏只留最近几轮 */
+  var rounds = { mem: [], doc: [] };
+
+  function init() {
+    memStream = doc.getElementById('stream-mem');
+    docStream = doc.getElementById('stream-doc');
+    docPane = doc.getElementById('pane-doc');
+    reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  }
+
+  function follow(stream, node) {
+    var tall = node.offsetHeight > stream.clientHeight * 0.85;
+    stream.scrollTop = tall ? Math.max(0, node.offsetTop - 12) : stream.scrollHeight;
+  }
+
+  function put(stream, node) {
+    stream.appendChild(node);
+    follow(stream, node);
+  }
+
+  /* 一批输出只滚一次：整批装不下就把这一批的第一行顶到视野顶部 */
+  function settle(stream, start) {
+    if (!start) return;
+    var span = stream.scrollHeight - start.offsetTop;
+    stream.scrollTop = span > stream.clientHeight * 0.85
+      ? Math.max(0, start.offsetTop - 12)
+      : stream.scrollHeight;
+  }
+
+  function sysLine(text) {
+    var p = doc.createElement('p');
+    p.className = 'ln ln--sys';
+    p.appendChild(R.segsNode(R.segments(text)));
+    return p;
+  }
+
+  function echoLine(text) {
+    var box = doc.createElement('div');
+    box.className = 'echo';
+    var mark = doc.createElement('span');
+    mark.className = 'echo__mark';
+    mark.textContent = '>';
+    var body = doc.createElement('span');
+    body.className = 'echo__text';
+    body.textContent = text;
+    box.appendChild(mark);
+    box.appendChild(body);
+    return box;
+  }
+
+  /* 列表的一段：记忆进左栏，档案进右栏（作者定的，见 SPEC §10） */
+  function listBlock(sec) {
+    var frag = doc.createDocumentFragment();
+    var cap = doc.createElement('p');
+    cap.className = 'ln ln--cap';
+    cap.textContent = sec.label;
+    frag.appendChild(cap);
+
+    /* 空段不会传进来（引擎只给非空的段） */
+    sec.rows.forEach(function (row) {
+      var p = doc.createElement('p');
+      p.className = 'ln ln--sys ln--row';
+      p.textContent = row.n + '. ' + row.title;
+      frag.appendChild(p);
+    });
+    return frag;
+  }
+
+  function commandBlock(rows) {
+    var frag = doc.createDocumentFragment();
+    rows.forEach(function (row) {
+      var p = doc.createElement('p');
+      p.className = 'ln ln--sys ln--cmd';
+      p.appendChild(doc.createTextNode(row.n + '. '));
+      var m = /^([^【]+)(【.*】)?$/.exec(row.label);
+      var name = m ? m[1] : row.label;
+      var tail = m && m[2] ? m[2] : '';
+      var b = doc.createElement('b');
+      b.textContent = name;
+      p.appendChild(b);
+      if (tail) p.appendChild(doc.createTextNode(tail));
+      if (row.desc) p.appendChild(doc.createTextNode('：' + row.desc));
+      frag.appendChild(p);
+    });
+    return frag;
+  }
+
+  function clearAll() {
+    memStream.textContent = '';
+    docStream.textContent = '';
+    docPane.classList.remove('is-live');
+    rounds.mem.length = 0;
+    rounds.doc.length = 0;
+  }
+
+  function bootLine(item) {
+    var p = doc.createElement('p');
+    p.className = 'ln ln--sys ln--boot ln--boot-' + item.tone;
+    p.appendChild(R.segsNode(R.segments(item.text)));
+    return p;
+  }
+
+  /* 启动块：逐行出现，每行 140ms（行内不打字） */
+  function boot(done) {
+    clearAll();
+    if (reduce) {
+      SW.copy.BOOT.forEach(function (item) { put(memStream, bootLine(item)); });
+      if (done) done();
+      return;
+    }
+    var i = 0;
+    function step() {
+      if (i >= SW.copy.BOOT.length) {
+        if (done) done();
+        return;
+      }
+      put(memStream, bootLine(SW.copy.BOOT[i++]));
+      setTimeout(step, 140);
+    }
+    step();
+  }
+
+  /* note 的固定回执：灰一档，排法和正文一样，所以也能带 **加粗** */
+  function replyBlock(blocks) {
+    var div = doc.createElement('div');
+    div.className = 'reply';
+    div.appendChild(R.blocks(blocks));
+    return div;
+  }
+
+  /* ---------- 折叠 ---------- */
+
+  /* 只折叠，不留任何提示：超过 LIMIT 轮的，前面的直接隐藏 */
+  function foldOld(key) {
+    var list = rounds[key];
+    var hidden = Math.max(0, list.length - LIMIT);
+    list.forEach(function (el, i) {
+      el.classList.toggle('is-folded', i < hidden);
+    });
+  }
+
+  /* 一次命令 = 一轮；这一轮在每栏各有一个 .round 盒子 */
+  function roundBox(key, stream) {
+    var el = doc.createElement('section');
+    el.className = 'round';
+    stream.appendChild(el);
+    rounds[key].push(el);
+    return el;
+  }
+
+  /* 碎片要先取出第一个真元素，它才是滚动锚点 */
+  function mount(parent, node) {
+    var anchor = node.nodeType === 11 ? node.firstElementChild : node;
+    parent.appendChild(node);
+    return anchor;
+  }
+
+  function write(events) {
+    var starts = { mem: null, doc: null };
+    var boxes = { mem: null, doc: null };
+
+    function place(key, stream, node) {
+      if (!boxes[key]) boxes[key] = roundBox(key, stream);
+      var anchor = mount(boxes[key], node);
+      if (!starts[key]) starts[key] = anchor;
+    }
+
+    events.forEach(function (ev) {
+      switch (ev.kind) {
+        case 'echo':
+          place('mem', memStream, echoLine(ev.text));
+          break;
+        case 'sys':
+          place('mem', memStream, sysLine(ev.text));
+          break;
+        case 'memory':
+          place('mem', memStream, R.file(ev));
+          break;
+        case 'reply':
+          place('mem', memStream, replyBlock(ev.blocks));
+          break;
+        case 'doc':
+          place('doc', docStream, R.file(ev));
+          docPane.classList.add('is-live');
+          break;
+        case 'commandList':
+          place('mem', memStream, commandBlock(ev.rows));
+          break;
+        case 'catalog':
+          ev.sections.forEach(function (sec) {
+            if (sec.area === 'doc') {
+              place('doc', docStream, listBlock(sec));
+              docPane.classList.add('is-live');
+            } else {
+              place('mem', memStream, listBlock(sec));
+            }
+          });
+          break;
+        case 'clear':
+          clearAll();
+          starts.mem = starts.doc = null;
+          boxes.mem = boxes.doc = null;
+          break;
+        default:
+          break;
+      }
+    });
+
+    /* 先折叠再定位：折起来之后高度变了，锚点要按新布局算 */
+    if (boxes.mem) foldOld('mem');
+    if (boxes.doc) foldOld('doc');
+    if (starts.mem) settle(memStream, starts.mem);
+    if (starts.doc) settle(docStream, starts.doc);
+  }
+
+  SW.screen = {
+    init: init,
+    boot: boot,
+    write: write,
+    clear: clearAll
+  };
+})(globalThis.SIWEI = globalThis.SIWEI || {});
+
+</script>
+<script>
+/* ==========================================================================
+   输入行 —— 唯一的操作面
+   --------------------------------------------------------------------------
+   真 input 收字，但它是透明的（opacity:0）：位置、选区、滚动全由 mirror 负责画。
+   块状光标跟着真光标走，左右键、Home/End、鼠标点选都能用。
+   触屏走原生输入框（见 layout.css 的 pointer: coarse）。
+   ========================================================================== */
+
+(function (SW) {
+  'use strict';
+
+  var doc = document;
+
+  function create(opts) {
+    var input = doc.getElementById('cmd');
+    var mirror = doc.getElementById('mirror');
+    var caret = doc.getElementById('caret');
+    var line = doc.getElementById('line');
+    var viewport = doc.getElementById('viewport');
+    var field = input ? input.closest('.field') : null;
+    var history = [];
+    var cursor = 0;
+    var scroll = 0;
+    var raf = 0;
+
+    if (!input) return { focus: function () {} };
+
+    function text(t) { return doc.createTextNode(t); }
+
+    /* 把「光标前 / 光标 / 选区 / 光标后」重新拼一遍 */
+    function render() {
+      var v = input.value;
+      var a = input.selectionStart;
+      var b = input.selectionEnd;
+      if (a === null || a === undefined) a = v.length;
+      if (b === null || b === undefined) b = v.length;
+      if (a > b) { var t = a; a = b; b = t; }
+
+      while (mirror.firstChild) mirror.removeChild(mirror.firstChild);
+      mirror.appendChild(text(v.slice(0, a)));
+      mirror.appendChild(caret);
+      if (b > a) {
+        var sel = doc.createElement('span');
+        sel.className = 'sel';
+        sel.textContent = v.slice(a, b);
+        mirror.appendChild(sel);
+        caret.classList.add('is-off');
+      } else {
+        caret.classList.remove('is-off');
+      }
+      mirror.appendChild(text(v.slice(b)));
+
+      keepCaretVisible();
+    }
+
+    /* 光标贴着右边缘时，把整行往左推 */
+    function keepCaretVisible() {
+      if (!viewport || !line) return;
+      var x = caret.offsetLeft;
+      var w = viewport.clientWidth;
+      if (x - scroll > w - 14) scroll = x - w + 14;
+      else if (x - scroll < 0) scroll = x;
+      if (scroll < 0) scroll = 0;
+      line.style.transform = scroll ? 'translateX(' + (-scroll) + 'px)' : '';
+    }
+
+    function schedule() {
+      if (raf) return;
+      raf = window.requestAnimationFrame(function () {
+        raf = 0;
+        render();
+      });
+    }
+
+    function remember(raw) {
+      if (!raw) return;
+      if (history[history.length - 1] !== raw) history.push(raw);
+      if (history.length > 100) history.shift();
+      cursor = history.length;
+    }
+
+    function submit() {
+      var raw = input.value;
+      remember(raw);
+      input.value = '';
+      scroll = 0;
+      render();
+      opts.onSubmit(raw);
+      focus();
+    }
+
+    function recall(delta) {
+      if (!history.length) return;
+      cursor = Math.min(history.length, Math.max(0, cursor + delta));
+      input.value = cursor >= history.length ? '' : history[cursor];
+      try { input.setSelectionRange(input.value.length, input.value.length); } catch (e) { /* 忽略 */ }
+      scroll = 0;
+      render();
+    }
+
+    function focus() {
+      try { input.focus({ preventScroll: true }); } catch (e) { input.focus(); }
+    }
+
+    input.addEventListener('input', schedule);
+    input.addEventListener('keydown', schedule);   // 方向键：等浏览器挪完光标再画
+    input.addEventListener('keyup', schedule);
+    input.addEventListener('click', schedule);
+    input.addEventListener('select', schedule);
+    input.addEventListener('focus', function () {
+      if (field) field.classList.add('is-focus');
+      schedule();
+    });
+    input.addEventListener('blur', function () {
+      if (field) field.classList.remove('is-focus');
+    });
+    window.addEventListener('resize', function () { scroll = 0; schedule(); });
+
+    /* 鼠标拖选、Shift+方向键：真 input 的选区变了就重画 */
+    doc.addEventListener('selectionchange', function () {
+      if (doc.activeElement === input) schedule();
+    });
+
+    input.addEventListener('keydown', function (e) {
+      if (e.isComposing) return;          // 输入法组字中的回车不算提交
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        submit();
+        return;
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        recall(-1);
+        return;
+      }
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        recall(1);
+      }
+    });
+
+    /* 页面上任何地方点一下都回到输入行；正在选中正文时不要抢 */
+    doc.addEventListener('click', function () {
+      var sel = window.getSelection ? String(window.getSelection()) : '';
+      if (sel) return;
+      focus();
+    });
+
+    render();
+    return { focus: focus, render: render };
+  }
+
+  SW.createInput = create;
+})(globalThis.SIWEI = globalThis.SIWEI || {});
+
+</script>
+<script>
+/* ==========================================================================
+   组装 —— 页面里唯一动状态的地方
+   --------------------------------------------------------------------------
+   模式：?open 全解锁（逐篇读稿用），不读写存档。
+   没有 ?test：判定逻辑由 tools/test.mjs 在 node 里跑，同一个引擎。
+
+   存读档：引擎只发 export / import 两个事件，浏览器这一侧的下载、
+   文件选择、读文件全在这里（core 里不许出现 DOM）。
+   ========================================================================== */
+
+(function (SW) {
+  'use strict';
+
+  /* ?open 只在本地生效：file://、localhost、127.0.0.1、内网段。
+     正式域名上无效，免得读者加个参数就把整部游戏看光。 */
+  var DEV_HOST = /^(localhost|127\.0\.0\.1|\[::1\]|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/;
+
+  function isDev() {
+    return location.protocol === 'file:' || DEV_HOST.test(location.hostname);
+  }
+
+  var open = isDev() && /[?&]open\b/.test(location.search);
+
+  function storage() {
+    try {
+      var k = '__siwei__';
+      window.localStorage.setItem(k, '1');
+      window.localStorage.removeItem(k);
+      return window.localStorage;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  var store = open ? null : storage();
+  var entries = (SW.CONTENT && SW.CONTENT.entries) || [];
+
+  var engine = SW.createEngine({
+    entries: entries,
+    T: SW.copy.T,
+    commands: SW.copy.COMMANDS,
+    greet: SW.copy.GREET,
+    open: open
+  });
+
+  if (!open) {
+    var saved = SW.state.load(store, function (id) { return engine.bank.byId.has(id); });
+    if (saved) engine.restore(saved);
+  }
+
+  var ui = null;
+
+  /* ---------- 存读档：浏览器的这一侧 ---------- */
+
+  function pad(n) { return String(n).padStart(2, '0'); }
+
+  /* 文件名只到秒；同一秒里连按两次会重名，浏览器自己会加 (1) */
+  function stamp() {
+    var d = new Date();
+    return d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + '-' +
+      pad(d.getHours()) + pad(d.getMinutes()) + pad(d.getSeconds());
+  }
+
+  /* 存档就是一份 JSON：那句话说出口，紧接着把文件交给浏览器下载。 */
+  function download(text) {
+    var a = document.createElement('a');
+    var url = '';
+    try {
+      url = URL.createObjectURL(new Blob([text], { type: 'application/json;charset=utf-8' }));
+    } catch (e) {
+      url = '';
+    }
+    a.href = url || 'data:application/json;charset=utf-8,' + encodeURIComponent(text);
+    a.download = '思维系统-存档-' + stamp() + '.json';
+    a.rel = 'noopener';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    if (url) setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+  }
+
+  var picker = null;
+
+  function ensurePicker() {
+    if (picker) return picker;
+    picker = document.createElement('input');
+    picker.type = 'file';
+    picker.accept = '.json,application/json';
+    picker.hidden = true;
+    picker.setAttribute('aria-hidden', 'true');
+    picker.addEventListener('change', function () {
+      var file = picker.files && picker.files[0];
+      picker.value = '';
+      if (file) readSave(file);
+    });
+    /* 取消选择：认 cancel 的浏览器（Chrome 113 / Safari 16.4 / Firefox 109 起）才回焦点 */
+    picker.addEventListener('cancel', function () { if (ui) ui.focus(); });
+    document.body.appendChild(picker);
+    return picker;
+  }
+
+  function say(text) {
+    SW.screen.write([{ kind: 'sys', text: text }]);
+    if (ui) ui.focus();
+  }
+
+  function readSave(file) {
+    var reader = new FileReader();
+    reader.onerror = function () { say(SW.copy.T.loadBad); };
+    reader.onload = function () { applySave(String(reader.result)); };
+    reader.readAsText(file);
+  }
+
+  /* 读进来就顶掉当前状态：清屏、重放启动块，再把目录列一遍。
+     存档里一份都没有就不列，免得只回一句「尚未下载任何记忆或文档」。 */
+  function applySave(text) {
+    var loaded = SW.state.importText(text, function (id) { return engine.bank.byId.has(id); });
+    if (!loaded) {
+      say(SW.copy.T.loadBad);
+      return;
+    }
+    engine.restore(loaded);
+    if (!open) SW.state.save(engine.state, store);
+    SW.screen.boot(function () {
+      var events = [{ kind: 'sys', text: SW.copy.T.loadDone }];
+      engine.catalogEvents().forEach(function (ev) {
+        if (ev.kind === 'catalog') events.push(ev);
+      });
+      SW.screen.write(events);
+      if (ui) ui.focus();
+    });
+  }
+
+  /* ---------- 提交 ---------- */
+
+  function submit(raw) {
+    var result = engine.handle(raw);
+
+    if (result.reset) {
+      SW.state.clear(store);
+      SW.screen.clear();
+      SW.screen.boot(function () { if (ui) ui.focus(); });
+      return;
+    }
+
+    SW.screen.write(result.events);
+
+    /* 两个不落屏的事件：导出 → 下载；导入 → 开文件选择器。
+       都还在这一次提交（= 同一轮用户手势）里，浏览器才放行。 */
+    result.events.forEach(function (ev) {
+      if (ev.kind === 'export') download(ev.text);
+      else if (ev.kind === 'import') ensurePicker().click();
+    });
+
+    if (!open && raw !== '') SW.state.save(engine.state, store);
+  }
+
+  /* 软键盘会把可视视口压小（iOS 尤其明显）：把高度写进 --app-h，
+     窄屏布局据此缩，命令行不会被键盘盖住。桌面写进去也无害。 */
+  function fitViewport() {
+    var vv = window.visualViewport;
+    if (!vv) return;
+    var root = document.documentElement;
+    var apply = function () {
+      root.style.setProperty('--app-h', Math.round(vv.height) + 'px');
+      root.style.setProperty('--app-top', Math.round(vv.offsetTop) + 'px');
+    };
+    vv.addEventListener('resize', apply);
+    vv.addEventListener('scroll', apply);
+    apply();
+  }
+
+  fitViewport();
+  SW.screen.init();
+  ui = SW.createInput({ onSubmit: submit });
+
+  SW.screen.boot(function () {
+    if (ui) ui.focus();
+    if (open) SW.screen.write(engine.handle('列表').events);
+  });
+
+  /* 调试口：控制台里 __SIWEI.engine 可查当前状态 */
+  window.__SIWEI = { engine: engine, state: engine.state, content: SW.CONTENT };
+})(globalThis.SIWEI = globalThis.SIWEI || {});
+
+</script>
+</body>
+</html>
