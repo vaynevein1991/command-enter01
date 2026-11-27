@@ -11,29 +11,21 @@
 <title>思维系统</title>
 <link rel="icon" href="data:,">
 <style>
-/* ==========================================================================
-   设计令牌 —— 全站唯一的数值出处
-   改大小、改灰阶只改这里；别在其它文件里出现字面色值。
-   ========================================================================== */
 
 :root {
-  /* 灰阶：只有四档，不新增第五档 */
   --bg: #000000;
   --ink: #ffffff;
   --ink-dim: #7a7a7a;
   --ink-line: #313131;
   --ink-bar: #101010;
 
-  /* 两套字体，对应两种说话的人 */
   --font-sys: SimSun, "Songti SC", "Noto Serif SC", "Source Han Serif SC", STSong, serif;
   --font-file: "Times New Roman", KaiTi, "Kaiti SC", STKaiti, "Kaiti TC", SimSun, serif;
 
-  /* 排版 */
   --fs: 18px;
   --lh: 2;
   --fs-label: 15px;
 
-  /* 面板几何：视口的 86%，超宽屏封顶。想更大更小只改 --panel-fill */
   --panel-fill: 86;
   --panel-w: 1800px;
   --panel-h: 1100px;
@@ -42,17 +34,11 @@
   --pad-x: 16px;
   --pad-y: 14px;
 
-  /* 段落间距：一个空行 */
   --blk-gap: 1em;
 }
 
 </style>
 <style>
-/* ==========================================================================
-   文字形态 —— 屏幕上只有五类行
-     echo 回显 / sys 系统 / file.doc 档案 / file.mem 记忆 / prose（暂并入 file.mem）
-   区分手段只有三个：灰度、缩进、宋楷之别。
-   ========================================================================== */
 
 html {
   -webkit-text-size-adjust: 100%;
@@ -76,8 +62,6 @@ p, h3, dl, dt, dd, hr { margin: 0; }
 
 ::selection { background: #ffffff; color: #000000; }
 
-/* ---------- 行 ---------- */
-
 .ln {
   overflow-wrap: anywhere;
 }
@@ -95,8 +79,6 @@ p, h3, dl, dt, dd, hr { margin: 0; }
 
 .ln--row { padding-left: 0; }
 
-/* ---------- 回显 ---------- */
-
 .echo {
   display: flex;
   gap: 8px;
@@ -113,8 +95,6 @@ p, h3, dl, dt, dd, hr { margin: 0; }
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
-
-/* ---------- 正文 ---------- */
 
 .file { color: var(--ink); }
 
@@ -154,7 +134,6 @@ p, h3, dl, dt, dd, hr { margin: 0; }
   margin: 1em 0;
 }
 
-/* 竖向字段卡：表头变标签，每个「标签：值」占一行 */
 .kv {
   margin: 0 0 var(--blk-gap);
   padding-left: 1em;
@@ -173,7 +152,7 @@ p, h3, dl, dt, dd, hr { margin: 0; }
 
 .kv dt {
   color: var(--ink-dim);
-  white-space: nowrap;       /* 「住址」「姓名」这些标签整体不拆 */
+  white-space: nowrap;
 }
 
 .kv dt::after { content: '：'; }
@@ -183,7 +162,6 @@ p, h3, dl, dt, dd, hr { margin: 0; }
   min-width: 0;
 }
 
-/* note 回执：系统在说话，所以灰一档；但允许正文的块语法（含 **加粗**） */
 .reply {
   color: var(--ink-dim);
   margin-bottom: var(--blk-gap);
@@ -193,12 +171,6 @@ p, h3, dl, dt, dd, hr { margin: 0; }
 
 </style>
 <style>
-/* ==========================================================================
-   版式 —— 一块两栏的屏幕
-   --------------------------------------------------------------------------
-   桌面：左栏（记忆 + 底部长在左栏下的命令行）｜ 右栏（档案，通高）
-   窄屏：记忆在上、档案在中、命令行在最下
-   ========================================================================== */
 
 *,
 *::before,
@@ -227,8 +199,6 @@ body {
     "bar doc";
   overflow: hidden;
 }
-
-/* ---------- 栏 ---------- */
 
 .col {
   display: grid;
@@ -270,12 +240,8 @@ body {
 .stream::-webkit-scrollbar-track { background: transparent; }
 .stream::-webkit-scrollbar-thumb { background: #2a2a2a; }
 
-/* ---------- 折叠 ---------- */
-
 .round { display: block; }
 .round.is-folded { display: none; }
-
-/* ---------- 命令行 ---------- */
 
 .bar {
   grid-area: bar;
@@ -305,7 +271,6 @@ body {
   flex: none;
 }
 
-/* 输入行可视区：真 input 盖在上面（透明），这一层只负责画 */
 .viewport {
   position: relative;
   flex: 1;
@@ -329,7 +294,6 @@ body {
 
 .mirror { color: var(--ink); white-space: pre; }
 
-/* 零宽块状光标：不占位，盖在下一个字上 */
 .caret {
   position: relative;
   display: inline-block;
@@ -354,7 +318,6 @@ body {
   color: var(--ink-dim);
 }
 
-/* 选区：反白。真 input 是 opacity:0，所以这块由 mirror 画 */
 .sel {
   background: var(--ink);
   color: var(--bg);
@@ -364,7 +327,6 @@ body {
   50% { opacity: 0; }
 }
 
-/* 真 input：收字、管光标位置，但不显示；显示交给 .line */
 .cmd {
   position: absolute;
   inset: 0;
@@ -383,9 +345,6 @@ body {
 
 .cmd:focus { outline: none; }
 
-/* ---------- 窄屏：上下叠 ---------- */
-/* 只在竖屏叠；横屏手机（844×390 这种）继续左右两栏，叠起来只剩一百多像素 */
-
 @media (max-width: 900px) and (orientation: portrait) {
   body {
     position: fixed;
@@ -396,9 +355,9 @@ body {
 
   .screen {
     width: 100%;
-    height: 100vh;                 /* 老浏览器兜底 */
-    height: var(--app-h, 100dvh);  /* 软键盘弹出时由 boot.js 写这个值 */
-    transform: translateY(var(--app-top, 0px));  /* iOS 会用可视视口去"平移"，跟着它走 */
+    height: 100vh;
+    height: var(--app-h, 100dvh);
+    transform: translateY(var(--app-top, 0px));
     border: 0;
     padding-top: env(safe-area-inset-top);
     padding-bottom: env(safe-area-inset-bottom);
@@ -418,10 +377,6 @@ body {
   .stream { -webkit-overflow-scrolling: touch; }
 }
 
-/* ---------- 触屏 / 窄屏：换成原生输入框 ---------- */
-/* 中文输入法组字时是看不见候选字的：镜像那套在手机上会让玩家以为没打上字。
-   竖屏窄屏或触屏一律用原生输入框 + 原生光标；桌面继续用块状光标。 */
-
 @media (max-width: 900px) and (orientation: portrait), (pointer: coarse) {
   .line { display: none; }
 
@@ -438,8 +393,6 @@ body {
     touch-action: manipulation;
   }
 }
-
-/* ---------- 动效预算 ---------- */
 
 @media (prefers-reduced-motion: reduce) {
   .caret::before { animation: none; }
@@ -474,7 +427,6 @@ body {
 </div>
 
 <script>
-/* 构建生成，不要手改。源文件在 content/，改完跑 tools/build.mjs */
 window.SIWEI = window.SIWEI || {};
 window.SIWEI.CONTENT = {
   version: 1,
@@ -520,19 +472,10 @@ window.SIWEI.CONTENT = {
 
 </script>
 <script>
-/* ==========================================================================
-   界面文案与指令表 —— 全项目唯一出处
-   --------------------------------------------------------------------------
-   规则：
-     1. 玩家能看见的每一个系统字符串都在这里，别处不许再出现字面量。
-     2. 改动任何一句 = 改产品，需在 docs/SPEC.md 同步记一笔。
-     3. 文案规范见 docs/SPEC.md §4：陈述句、句末句号、无感叹号。
-   ========================================================================== */
 
 (function (SW) {
   'use strict';
 
-  /* 反馈码 → 文案。编号连续，新增只许往后退。 */
   var T = Object.freeze({
     f1: '文件不存在。请检查文件名称。',
     f2: '指令语法错误，请键入指令，查看指令列表，检查指令逻辑。',
@@ -563,7 +506,6 @@ window.SIWEI.CONTENT = {
     newCmd: '新指令：{0}。'
   });
 
-  /* 启动块：逐字锁定，见 docs/VISUAL.md §5.4 */
   var BOOT = Object.freeze([
     { tone: 'ink', text: '思维系统 正在启动.....' },
     { tone: 'dim', text: '载入检索模块 OK' },
@@ -571,9 +513,6 @@ window.SIWEI.CONTENT = {
     { tone: 'ink', text: '就绪。请键入指令。' }
   ]);
 
-  /* 明码指令：玩家在 `指令` 里看到的就是这张表，顺序即编号。
-     gate   = 需要 state.unlocked 里的哪一格
-     params = 带【】参数 */
   var COMMANDS = [
     { key: '指令', label: '指令', desc: '查询指令列表。' },
     { key: '思考', label: '思考', desc: '进入思考状态。' },
@@ -588,10 +527,8 @@ window.SIWEI.CONTENT = {
     { key: '退出', label: '退出', desc: '退出档案系统。' }
   ];
 
-  /* 特殊词：与指令表是两套东西，都不命中才落 F3 */
   var GREET = ['你好', '您好', '嗨', '哈喽'];
 
-  /* 内容不能用的标题 / 触发词：会和指令、特殊词撞车 */
   var RESERVED = COMMANDS.map(function (c) { return c.key; })
     .concat(GREET).concat(['帮助', '开始']);
 
@@ -614,12 +551,6 @@ window.SIWEI.CONTENT = {
 
 </script>
 <script>
-/* ==========================================================================
-   状态与存档 —— 纯数据，不碰 DOM，不认 localStorage
-   --------------------------------------------------------------------------
-   存档适配器：任何有 getItem / setItem / removeItem 的对象都能用。
-   浏览器给 window.localStorage，测试给假对象。
-   ========================================================================== */
 
 (function (SW) {
   'use strict';
@@ -630,23 +561,21 @@ window.SIWEI.CONTENT = {
   function create() {
     return {
       v: VERSION,
-      cmdUsed: false,        // 用过 `指令`，F9/F10 用
-      pendingExit: false,    // 退出确认态，不存档
-      discovered: [],        // 已拿到的条目 id，决定 列表 / requires / 邮箱 gate
-      known: [],             // 已解锁的关联词：检索 / 回忆 只认这里面的词
-      givenThink: 0,         // 思考是否已交出起点：0 / 1
-      ended: '',             // 结局条目 id
-      cleared: false,        // 已经通关（输入对名字）
-      awaitName: false,      // 正在等玩家输入名字，不存档
-      hinted: false,         // 检索+回忆都解锁后那句「请键入指令查看指令逻辑」是否已提示
-      notified: false,       // 结局要的文件集齐后那句「已解锁全部内容…」是否已提示
-      mails: [],             // 已投递的邮件 id（只记投递，不再当闸门）
+      cmdUsed: false,
+      pendingExit: false,
+      discovered: [],
+      known: [],
+      givenThink: 0,
+      ended: '',
+      cleared: false,
+      awaitName: false,
+      hinted: false,
+      notified: false,
+      mails: [],
       unlocked: { '邮箱': false, '回忆': false, '检索': false }
     };
   }
 
-  /* 把任意来源的对象洗成合法状态；hasId 用来丢掉内容库里不存在的 id。
-     正文改字、删条目都不该让存档炸掉。 */
   function adopt(raw, hasId) {
     var base = create();
     if (!raw || typeof raw !== 'object') return base;
@@ -662,8 +591,6 @@ window.SIWEI.CONTENT = {
       });
     }
 
-    /* known 存的是玩家敲的词，不是条目 id，所以不能过 hasId；
-       内容库里已经没有的词留着也没害处——它敲不到任何东西。 */
     function keepWords(list) {
       if (!Array.isArray(list)) return [];
       var seen = {};
@@ -696,12 +623,10 @@ window.SIWEI.CONTENT = {
       storage.setItem(KEY, JSON.stringify(state));
       return true;
     } catch (e) {
-      return false;   // 隐私模式、配额满：静默失败，不打断游戏
+      return false;
     }
   }
 
-  /* 导出：只写会持久化的字段（退出确认、等名字是瞬时态，不进存档）。
-     缩进两格，导出的文件人也能直接读。 */
   function exportText(state) {
     var s = adopt(state);
     return JSON.stringify({
@@ -719,11 +644,9 @@ window.SIWEI.CONTENT = {
     }, null, 2) + '\n';
   }
 
-  /* 导入：版本必须是 2、且带 discovered 数组，否则当作不是存档。
-     hasId 用来丢掉内容库里已经不存在的 id——删条目、改正文都不会炸档。 */
   function importText(text, hasId) {
     if (typeof text !== 'string') return null;
-    var body = text.replace(/^\uFEFF/, '');        // 记事本另存为会带 BOM
+    var body = text.replace(/^\uFEFF/, '');
     if (!body.trim()) return null;
     var obj;
     try { obj = JSON.parse(body); } catch (e) { return null; }
@@ -741,7 +664,7 @@ window.SIWEI.CONTENT = {
 
   function clear(storage) {
     if (!storage) return;
-    try { storage.removeItem(KEY); } catch (e) { /* 忽略 */ }
+    try { storage.removeItem(KEY); } catch (e) {  }
   }
 
   SW.state = {
@@ -759,33 +682,6 @@ window.SIWEI.CONTENT = {
 
 </script>
 <script>
-/* ==========================================================================
-   引擎 —— 输入一行，输出事件数组
-   --------------------------------------------------------------------------
-   这里没有 DOM、没有计时器、没有存储。
-   判定顺序见 docs/SPEC.md §2，改顺序等于改产品。
-
-   两条带括号的动词各管一栏：
-     回忆【关键词】   → 只查记忆（左栏）
-     检索【档案名称】 → 只查档案（右栏）
-
-    结局（track: end）是记忆：落左栏、进记忆列表。它只由认证（思考 → 你的名字）
-    交出来；通关之后也挂在自己 person 那个人名上，而且标题在两个动词里都认——
-    `列表` 只给标题，玩家就会照着标题敲，不认就等于把人锁在门外。
-
-   认知锁：检索 / 回忆 只认 state.known 里的词。词是读出来的——每份内容带着
-   构建期算好的 learn（标题、别名、正文里出现过的能敲的词），读到就记下。
-   敲了库里存在、但还没读到过的词 → F18，不给正文，也不解锁。
-
-   事件（ui 层只认这些）：
-     echo        { text }                       玩家输入回显
-     sys         { text }                       系统行（含 **强调**）
-     memory      { track, id, title, blocks }   记忆正文 → 左栏
-     doc         { track, id, title, blocks }   档案正文 → 右栏
-     commandList { rows: [{ n, label, desc }] } 指令表
-     catalog     { sections: [{ area, label, rows }] }  列表（分栏落）
-     clear       {}                             清屏（退出确认后）
-   ========================================================================== */
 
 (function (SW) {
   'use strict';
@@ -825,12 +721,6 @@ window.SIWEI.CONTENT = {
 
     var state = SW.state.create();
 
-    /* ---------- 认知（关联词） ----------
-
-       玩家敲的词只能来自他读过的东西。每份内容的 learn 是构建期算好的：
-       正文里出现的所有"能被敲的词"，加上作者手写的 teaches。
-       读到一份 = 它的标题 + 别名 + learn 全部进 known。 */
-
     function remember(word) {
       if (typeof word !== 'string' || !word) return;
       if (state.known.indexOf(word) < 0) state.known.push(word);
@@ -845,10 +735,7 @@ window.SIWEI.CONTENT = {
 
     function knows(word) { return state.known.indexOf(word) >= 0; }
 
-    /* 条目认不认识：标题或别名有一个在手就算 */
     function knowsEntry(e) { return knows(e.title) || (!!e.trigger && knows(e.trigger)); }
-
-    /* ---------- 内容查询 ---------- */
 
     function has(id) { return state.discovered.indexOf(id) >= 0; }
 
@@ -870,11 +757,9 @@ window.SIWEI.CONTENT = {
 
     function discover(e) {
       if (!has(e.id)) state.discovered.push(e.id);
-      rememberEntry(e);               // 读到就认识：标题、别名、正文里出现过的词
+      rememberEntry(e);
     }
 
-    /* 解锁只认两件事：这份内容已经拿到，且它的 unlockWhen 全都拿到。
-       每次拿到新内容后重扫一遍——后到的条件也能把前一个解锁补上。 */
     function grantUnlocks(events) {
       var unlockedNow = 0;
       entries.forEach(function (e) {
@@ -888,15 +773,12 @@ window.SIWEI.CONTENT = {
         events.push({ kind: 'sys', text: SW.copy.format(T.newCmd, name) });
       });
 
-      /* 检索和回忆都到手了，提醒一次怎么查规则 */
       if (unlockedNow && !state.hinted && state.unlocked['检索'] && state.unlocked['回忆']) {
         state.hinted = true;
         events.push({ kind: 'sys', text: T.hint });
       }
     }
 
-    /* 结局要的文件全部到手：提示一次，让玩家去 `思考`
-       （作者原话，见 docs/COPY.md） */
     function notifyComplete(events) {
       if (state.notified || state.cleared) return;
       if (!ends.length) return;
@@ -917,23 +799,18 @@ window.SIWEI.CONTENT = {
 
     function ending() { return ends[0] || null; }
 
-    /* ---------- 事件构造 ---------- */
-
     function fail(events, text) {
       events.push({ kind: 'sys', text: text });
       return { reset: false };
     }
 
     function memoryEvent(e) {
-      /* 结局（track: end）也是记忆：落左栏、楷体缩进、进记忆列表 */
       return { kind: 'memory', track: 'memory', id: e.id, title: e.title, blocks: e.blocks || [] };
     }
 
     function docEvent(e) {
       return { kind: 'doc', track: 'doc', id: e.id, title: e.title, blocks: e.blocks || [] };
     }
-
-    /* ---------- 各个动作 ---------- */
 
     function readMemory(e, events) {
       discover(e);
@@ -952,7 +829,6 @@ window.SIWEI.CONTENT = {
     }
 
     function think(events) {
-      /* 第一次：交出 think 最小的那份记忆（起点） */
       if (state.givenThink === 0) {
         var cand = mems.filter(function (e) { return typeof e.think === 'number'; })
           .sort(function (a, b) { return (a.think - b.think) || byOrder(a, b); })[0];
@@ -961,7 +837,6 @@ window.SIWEI.CONTENT = {
         return readMemory(cand, events);
       }
 
-      /* 之后：前提齐了就发问，不齐就是 f12 */
       var end = ending();
       if (end && !state.cleared && reqMet(end)) {
         state.awaitName = true;
@@ -978,24 +853,16 @@ window.SIWEI.CONTENT = {
         state.cleared = true;
         state.ended = end.id;
         discover(end);
-        events.push(memoryEvent(end));  // 结局是记忆：落左栏、进记忆列表
+        events.push(memoryEvent(end));
         return { reset: false };
       }
       return fail(events, T.f14);
     }
 
-    /* 一个人可以有多段交集：一次回忆把"现在想得起来、还没想起过"的全给出来。
-       全都想过了就重新读一遍。取不到的（requires 没满足）静默跳过。
-       这个人没有记忆、但目录里写了一条 note 的，就交那句固定回执。
-       认知锁：人名不在 known 里 = 你还没在任何地方见过他，F18。
-
-       结局也是记忆：通关之后它挂在自己 person 那个人名上（就是 answer 那个名字），
-       也可以直接按标题回忆。认证之前一律不交——交出去就等于跳过通关。 */
     function recall(name, events) {
       var end = ending();
       var endTitle = !!end && (name === end.title || (!!end.trigger && name === end.trigger));
 
-      /* 按标题回忆：只认结局这一份；标题是拿到之后才认得的词 */
       if (endTitle) {
         if (!knows(name) || !has(end.id)) return fail(events, T.f18);
         return readMemory(end, events);
@@ -1012,7 +879,6 @@ window.SIWEI.CONTENT = {
       }
       if (!knows(name)) return fail(events, T.f18);
 
-      /* 认证之前，结局还没到"想得起来"那一步：它匹配得上，但不出正文 */
       var ready = matches.filter(reqMet).filter(function (e) {
         return e.track !== 'end' || has(e.id);
       });
@@ -1030,9 +896,6 @@ window.SIWEI.CONTENT = {
       return { reset: false };
     }
 
-    /* 前置档案：带 requireEarlier 的档案，列表里排在它前面的每一份都要先到手。
-       已经下载过的不再拦——重新读不算解锁。
-       返回还缺的那几份，空数组就是可以加载。 */
     function missingEarlier(e) {
       if (!e.requireEarlier || has(e.id)) return [];
       return docs.filter(function (o) {
@@ -1040,19 +903,11 @@ window.SIWEI.CONTENT = {
       });
     }
 
-    /* 档案按标题或 trigger 认；都对不上再看 search 类 note。
-       如果敲的是一个"人"（记忆里有他、或目录里给他留了回忆回执），
-       那多半是把人名当文件名敲了，回 f16 而不是「文件不存在」。
-       结局是唯一的例外：它是记忆，标题却认（见上面的说明）。
-
-       认知锁先于 requires：库里确实有这个词、但玩家还没在任何正文里见过它，
-       就是 F18（不是 F1）——敲对了名字却"没看过"，本身就是泄露。 */
     function search(title, events) {
       var d = docs.filter(function (e) {
         return e.title === title || e.trigger === title;
       })[0] || null;
 
-      /* 认识 → requires 没满足 = 当作不存在（F1）；前置档案没下齐 = 档案在、加载不了（F17） */
       if (d) {
         if (!knowsEntry(d)) return fail(events, T.f18);
         if (!reqMet(d)) return fail(events, T.f1);
@@ -1060,8 +915,6 @@ window.SIWEI.CONTENT = {
         return readDoc(d, events);
       }
 
-      /* 结局是记忆，可它的标题照样能检索：`列表` 只给标题，玩家就会照着标题敲。
-         标题是拿到这份记忆之后才认得的词——之前一律 F18，不给正文。 */
       var end = ending();
       if (end && (title === end.title || (!!end.trigger && title === end.trigger))) {
         if (!knows(title) || !has(end.id)) return fail(events, T.f18);
@@ -1078,8 +931,6 @@ window.SIWEI.CONTENT = {
       return fail(events, T.f1);
     }
 
-    /* 人名：记忆里挂着他、目录里给他留了回忆回执，或者他一头挂在结局上。
-       结局的 `person` 也算法——`检索【李珀涯】` 该回「这是人名」，不是「文件不存在」。 */
     function isPerson(name) {
       if (notes.recall.has(name)) return true;
       if (mems.some(function (e) { return personsOf(e).indexOf(name) >= 0; })) return true;
@@ -1087,8 +938,6 @@ window.SIWEI.CONTENT = {
       return !!end && personsOf(end).indexOf(name) >= 0;
     }
 
-    /* note 的回执：留在左栏，样式和系统行一样，但允许正文的块语法。
-       回执正文里提到的人名也算"见过"（比如韩彬那句里的左旭升）。 */
     function reply(note, events) {
       if (!note || !reqMet(note)) return null;
       rememberEntry(note);
@@ -1096,7 +945,6 @@ window.SIWEI.CONTENT = {
       return { reset: false };
     }
 
-    /* 新闻：每次都是同一份，读过也能再读。回顾是玩家的正当需求，不再设闸门。 */
     function news(events) {
       var n = docs.filter(function (e) { return e.news; })[0];
       if (!n) return fail(events, T.f1);
@@ -1104,18 +952,15 @@ window.SIWEI.CONTENT = {
     }
 
     function catalog(events) {
-      /* 结局是记忆，跟记忆段一起列，按 order 排在 00–09 之后 */
       var memRows = mems.concat(ends).filter(function (e) { return has(e.id); })
         .sort(byOrder)
         .map(function (e) { return { n: padded(e.order), title: e.title }; });
 
-      /* 档案段只列 doc；结局不再算档案 */
       var docRows = docs.filter(function (e) { return has(e.id); })
         .map(function (e) { return { n: padded(e.order), title: e.title }; });
 
       if (!memRows.length && !docRows.length) return fail(events, T.f13);
 
-      /* 空的段直接不出现：没有就别摆个空标题 */
       var sections = [];
       if (memRows.length) sections.push({ area: 'mem', label: '记忆', rows: memRows });
       if (docRows.length) sections.push({ area: 'doc', label: '档案', rows: docRows });
@@ -1124,15 +969,12 @@ window.SIWEI.CONTENT = {
       return { reset: false };
     }
 
-    /* 读档之后要重画一遍目录，又不能伪造一行回显，所以单开一个入口 */
     function catalogEvents() {
       var events = [];
       catalog(events);
       return events;
     }
 
-    /* 邮箱：还有没投过的就先投；投完了停在最近一封，可以反复打开。
-       现在只有一封，所以每次都是同一封。 */
     function mail(events) {
       if (!state.unlocked['邮箱']) return fail(events, T.f3);
       var count = memoryCount();
@@ -1148,15 +990,12 @@ window.SIWEI.CONTENT = {
       return readDoc(last, events);
     }
 
-    /* 存档：状态本来每输入一次就自动存了，这一条只负责导出一份文件。
-       JSON 由核心层拼好；下不下载、怎么下载，是组装层的事。 */
     function exportSave(events) {
       events.push({ kind: 'sys', text: T.saveDone });
       events.push({ kind: 'export', text: SW.state.exportText(state) });
       return { reset: false };
     }
 
-    /* 读档：选文件、读文件、写回状态都在组装层；这里只发一个信号。 */
     function importSave(events) {
       events.push({ kind: 'import' });
       return { reset: false };
@@ -1188,7 +1027,6 @@ window.SIWEI.CONTENT = {
       return { reset: false };
     }
 
-    /* 条目自带 gate（邮箱 / 回忆 / 检索）时先查解锁，没开一律 F3。 */
     function run(cmd, arg, events) {
       if (cmd.gate && !state.unlocked[cmd.gate]) return fail(events, T.f3);
       if (cmd.params) {
@@ -1213,8 +1051,6 @@ window.SIWEI.CONTENT = {
       }
     }
 
-    /* ---------- 入口 ---------- */
-
     function handle(raw) {
       var events = [];
 
@@ -1223,7 +1059,6 @@ window.SIWEI.CONTENT = {
 
       var s = raw.trim();
 
-      /* 认证态：这一行整行都是"名字"，不再判指令 */
       if (state.awaitName) {
         if (s === '') return finish(fail(events, T.f4));
         return finish(answer(s, events));
@@ -1232,10 +1067,8 @@ window.SIWEI.CONTENT = {
       if (s === '') return finish(fail(events, T.f4));
       if (!CJK.test(s)) return finish(fail(events, T.f7));
 
-      /* 4. 逐字等于指令表 */
       var cmd = commands.filter(function (c) { return s === c.key; })[0] || null;
 
-      /* 5. 指令词开头 → 括号解析 */
       if (!cmd) {
         cmd = commands.filter(function (c) {
           return s.length > c.key.length && s.indexOf(c.key) === 0;
@@ -1250,32 +1083,25 @@ window.SIWEI.CONTENT = {
           var hit = ARG.exec(rest);
           if (!hit) return finish(fail(events, T.f2));
           arg = hit[1].trim();
-          /* 括号里只有空白：按"空检索框"处理 */
           if (arg === '') return finish(fail(events, T.f4));
         }
         return finish(run(cmd, arg, events));
       }
 
-      /* 6. 特殊词表（问候按前缀认，你好 / 你好啊 都算） */
       if (greet.some(function (g) { return s === g || s.indexOf(g) === 0; })) {
         return finish(fail(events, T.f6));
       }
       if (s === '帮助') return finish(fail(events, T.f8));
       if (s === '开始') return finish(fail(events, state.cmdUsed ? T.f10 : T.f9));
 
-      /* 7. 兜底 */
       return finish(fail(events, T.f3));
 
       function finish(r) { return { events: events, reset: !!r.reset }; }
     }
 
-    /* ---------- 存档 / 种子 ---------- */
-
     function restore(saved) {
       if (!saved) return;
       Object.assign(state, SW.state.adopt(saved, function (id) { return byId.has(id); }));
-      /* 老存档里没有 known（或者正文改过）：按"已经拿到的"重教一遍，
-         免得读一份旧档就把玩家锁在门外。 */
       state.discovered.forEach(function (id) { rememberEntry(byId.get(id)); });
     }
 
@@ -1309,25 +1135,12 @@ window.SIWEI.CONTENT = {
 
 </script>
 <script>
-/* ==========================================================================
-   渲染 —— 内容块 → DOM
-   --------------------------------------------------------------------------
-   进来的是构建期编译好的块，不是 markdown：
-     { t: 'p',    lines: [[seg, …], …] }
-     { t: 'note', lines: [...] }      批注，灰一档
-     { t: 'h',    lines: [...] }      小标题
-     { t: 'kv',   head: [seg…], rows: [[seg…], …] }
-     { t: 'hr' }
-     seg = { b: 布尔, v: 文本 }
-   这里不做正则、不做语法判定，只有拼装。
-   ========================================================================== */
 
 (function (SW) {
   'use strict';
 
   var doc = document;
 
-  /* 系统行里的 **强调**：唯一允许的内联标记，不跨行、不嵌套、未闭合原样输出 */
   function segments(text) {
     var out = [];
     var i = 0;
@@ -1383,8 +1196,6 @@ window.SIWEI.CONTENT = {
         el.className = 'rule';
         return el;
       case 'kv':
-        /* 一张表拆成一张竖排字段卡：每个「标签：值」各占一行，
-           标签用 max-content 定宽，值在第二列换行——"住址" 不会断成 "住/址"。 */
         el = doc.createElement('dl');
         el.className = 'kv';
         block.rows.forEach(function (row) {
@@ -1424,7 +1235,6 @@ window.SIWEI.CONTENT = {
     return p;
   }
 
-  /* 一整份正文：上标记 + 正文 + 结束标记。记忆楷体缩进；档案（含结局）顶格宋体。 */
   function file(entry) {
     var isMem = entry.track === 'memory';
     var frag = doc.createDocumentFragment();
@@ -1448,15 +1258,6 @@ window.SIWEI.CONTENT = {
 
 </script>
 <script>
-/* ==========================================================================
-   屏幕 —— 事件 → 左栏 / 右栏
-   --------------------------------------------------------------------------
-   左栏吃：回显、系统行、指令表、列表、记忆正文、启动块。
-   右栏只吃：档案正文。永不出现系统行。
-
-   折叠：一次命令 = 一轮（.round）。每栏只留最近 5 轮展开，更早的折起来，
-   栏顶留一行「前面 N 次已折叠」，点一下能展开/收起。正文一个字都不删。
-   ========================================================================== */
 
 (function (SW) {
   'use strict';
@@ -1468,7 +1269,7 @@ window.SIWEI.CONTENT = {
   var docPane = null;
   var reduce = false;
 
-  var LIMIT = 5;                                        /* 每栏只留最近几轮 */
+  var LIMIT = 5;
   var rounds = { mem: [], doc: [] };
 
   function init() {
@@ -1488,7 +1289,6 @@ window.SIWEI.CONTENT = {
     follow(stream, node);
   }
 
-  /* 一批输出只滚一次：整批装不下就把这一批的第一行顶到视野顶部 */
   function settle(stream, start) {
     if (!start) return;
     var span = stream.scrollHeight - start.offsetTop;
@@ -1518,7 +1318,6 @@ window.SIWEI.CONTENT = {
     return box;
   }
 
-  /* 列表的一段：记忆进左栏，档案进右栏（作者定的，见 SPEC §10） */
   function listBlock(sec) {
     var frag = doc.createDocumentFragment();
     var cap = doc.createElement('p');
@@ -1526,7 +1325,6 @@ window.SIWEI.CONTENT = {
     cap.textContent = sec.label;
     frag.appendChild(cap);
 
-    /* 空段不会传进来（引擎只给非空的段） */
     sec.rows.forEach(function (row) {
       var p = doc.createElement('p');
       p.className = 'ln ln--sys ln--row';
@@ -1570,7 +1368,6 @@ window.SIWEI.CONTENT = {
     return p;
   }
 
-  /* 启动块：逐行出现，每行 140ms（行内不打字） */
   function boot(done) {
     clearAll();
     if (reduce) {
@@ -1590,7 +1387,6 @@ window.SIWEI.CONTENT = {
     step();
   }
 
-  /* note 的固定回执：灰一档，排法和正文一样，所以也能带 **加粗** */
   function replyBlock(blocks) {
     var div = doc.createElement('div');
     div.className = 'reply';
@@ -1598,9 +1394,6 @@ window.SIWEI.CONTENT = {
     return div;
   }
 
-  /* ---------- 折叠 ---------- */
-
-  /* 只折叠，不留任何提示：超过 LIMIT 轮的，前面的直接隐藏 */
   function foldOld(key) {
     var list = rounds[key];
     var hidden = Math.max(0, list.length - LIMIT);
@@ -1609,7 +1402,6 @@ window.SIWEI.CONTENT = {
     });
   }
 
-  /* 一次命令 = 一轮；这一轮在每栏各有一个 .round 盒子 */
   function roundBox(key, stream) {
     var el = doc.createElement('section');
     el.className = 'round';
@@ -1618,7 +1410,6 @@ window.SIWEI.CONTENT = {
     return el;
   }
 
-  /* 碎片要先取出第一个真元素，它才是滚动锚点 */
   function mount(parent, node) {
     var anchor = node.nodeType === 11 ? node.firstElementChild : node;
     parent.appendChild(node);
@@ -1676,7 +1467,6 @@ window.SIWEI.CONTENT = {
       }
     });
 
-    /* 先折叠再定位：折起来之后高度变了，锚点要按新布局算 */
     if (boxes.mem) foldOld('mem');
     if (boxes.doc) foldOld('doc');
     if (starts.mem) settle(memStream, starts.mem);
@@ -1693,13 +1483,6 @@ window.SIWEI.CONTENT = {
 
 </script>
 <script>
-/* ==========================================================================
-   输入行 —— 唯一的操作面
-   --------------------------------------------------------------------------
-   真 input 收字，但它是透明的（opacity:0）：位置、选区、滚动全由 mirror 负责画。
-   块状光标跟着真光标走，左右键、Home/End、鼠标点选都能用。
-   触屏走原生输入框（见 layout.css 的 pointer: coarse）。
-   ========================================================================== */
 
 (function (SW) {
   'use strict';
@@ -1722,7 +1505,6 @@ window.SIWEI.CONTENT = {
 
     function text(t) { return doc.createTextNode(t); }
 
-    /* 把「光标前 / 光标 / 选区 / 光标后」重新拼一遍 */
     function render() {
       var v = input.value;
       var a = input.selectionStart;
@@ -1748,7 +1530,6 @@ window.SIWEI.CONTENT = {
       keepCaretVisible();
     }
 
-    /* 光标贴着右边缘时，把整行往左推 */
     function keepCaretVisible() {
       if (!viewport || !line) return;
       var x = caret.offsetLeft;
@@ -1788,7 +1569,7 @@ window.SIWEI.CONTENT = {
       if (!history.length) return;
       cursor = Math.min(history.length, Math.max(0, cursor + delta));
       input.value = cursor >= history.length ? '' : history[cursor];
-      try { input.setSelectionRange(input.value.length, input.value.length); } catch (e) { /* 忽略 */ }
+      try { input.setSelectionRange(input.value.length, input.value.length); } catch (e) {  }
       scroll = 0;
       render();
     }
@@ -1798,7 +1579,7 @@ window.SIWEI.CONTENT = {
     }
 
     input.addEventListener('input', schedule);
-    input.addEventListener('keydown', schedule);   // 方向键：等浏览器挪完光标再画
+    input.addEventListener('keydown', schedule);
     input.addEventListener('keyup', schedule);
     input.addEventListener('click', schedule);
     input.addEventListener('select', schedule);
@@ -1811,13 +1592,12 @@ window.SIWEI.CONTENT = {
     });
     window.addEventListener('resize', function () { scroll = 0; schedule(); });
 
-    /* 鼠标拖选、Shift+方向键：真 input 的选区变了就重画 */
     doc.addEventListener('selectionchange', function () {
       if (doc.activeElement === input) schedule();
     });
 
     input.addEventListener('keydown', function (e) {
-      if (e.isComposing) return;          // 输入法组字中的回车不算提交
+      if (e.isComposing) return;
       if (e.key === 'Enter') {
         e.preventDefault();
         submit();
@@ -1834,7 +1614,6 @@ window.SIWEI.CONTENT = {
       }
     });
 
-    /* 页面上任何地方点一下都回到输入行；正在选中正文时不要抢 */
     doc.addEventListener('click', function () {
       var sel = window.getSelection ? String(window.getSelection()) : '';
       if (sel) return;
@@ -1850,21 +1629,10 @@ window.SIWEI.CONTENT = {
 
 </script>
 <script>
-/* ==========================================================================
-   组装 —— 页面里唯一动状态的地方
-   --------------------------------------------------------------------------
-   模式：?open 全解锁（逐篇读稿用），不读写存档。
-   没有 ?test：判定逻辑由 tools/test.mjs 在 node 里跑，同一个引擎。
-
-   存读档：引擎只发 export / import 两个事件，浏览器这一侧的下载、
-   文件选择、读文件全在这里（core 里不许出现 DOM）。
-   ========================================================================== */
 
 (function (SW) {
   'use strict';
 
-  /* ?open 只在本地生效：file://、localhost、127.0.0.1、内网段。
-     正式域名上无效，免得读者加个参数就把整部游戏看光。 */
   var DEV_HOST = /^(localhost|127\.0\.0\.1|\[::1\]|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/;
 
   function isDev() {
@@ -1902,18 +1670,14 @@ window.SIWEI.CONTENT = {
 
   var ui = null;
 
-  /* ---------- 存读档：浏览器的这一侧 ---------- */
-
   function pad(n) { return String(n).padStart(2, '0'); }
 
-  /* 文件名只到秒；同一秒里连按两次会重名，浏览器自己会加 (1) */
   function stamp() {
     var d = new Date();
     return d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + '-' +
       pad(d.getHours()) + pad(d.getMinutes()) + pad(d.getSeconds());
   }
 
-  /* 存档就是一份 JSON：那句话说出口，紧接着把文件交给浏览器下载。 */
   function download(text) {
     var a = document.createElement('a');
     var url = '';
@@ -1945,7 +1709,6 @@ window.SIWEI.CONTENT = {
       picker.value = '';
       if (file) readSave(file);
     });
-    /* 取消选择：认 cancel 的浏览器（Chrome 113 / Safari 16.4 / Firefox 109 起）才回焦点 */
     picker.addEventListener('cancel', function () { if (ui) ui.focus(); });
     document.body.appendChild(picker);
     return picker;
@@ -1963,8 +1726,6 @@ window.SIWEI.CONTENT = {
     reader.readAsText(file);
   }
 
-  /* 读进来就顶掉当前状态：清屏、重放启动块，再把目录列一遍。
-     存档里一份都没有就不列，免得只回一句「尚未下载任何记忆或文档」。 */
   function applySave(text) {
     var loaded = SW.state.importText(text, function (id) { return engine.bank.byId.has(id); });
     if (!loaded) {
@@ -1983,8 +1744,6 @@ window.SIWEI.CONTENT = {
     });
   }
 
-  /* ---------- 提交 ---------- */
-
   function submit(raw) {
     var result = engine.handle(raw);
 
@@ -1997,8 +1756,6 @@ window.SIWEI.CONTENT = {
 
     SW.screen.write(result.events);
 
-    /* 两个不落屏的事件：导出 → 下载；导入 → 开文件选择器。
-       都还在这一次提交（= 同一轮用户手势）里，浏览器才放行。 */
     result.events.forEach(function (ev) {
       if (ev.kind === 'export') download(ev.text);
       else if (ev.kind === 'import') ensurePicker().click();
@@ -2007,8 +1764,6 @@ window.SIWEI.CONTENT = {
     if (!open && raw !== '') SW.state.save(engine.state, store);
   }
 
-  /* 软键盘会把可视视口压小（iOS 尤其明显）：把高度写进 --app-h，
-     窄屏布局据此缩，命令行不会被键盘盖住。桌面写进去也无害。 */
   function fitViewport() {
     var vv = window.visualViewport;
     if (!vv) return;
@@ -2031,7 +1786,6 @@ window.SIWEI.CONTENT = {
     if (open) SW.screen.write(engine.handle('列表').events);
   });
 
-  /* 调试口：控制台里 __SIWEI.engine 可查当前状态 */
   window.__SIWEI = { engine: engine, state: engine.state, content: SW.CONTENT };
 })(globalThis.SIWEI = globalThis.SIWEI || {});
 
